@@ -32,7 +32,7 @@ function InputRow({ input, value, onChange }) {
       <div className="flex items-center justify-between gap-3">
         <label className="text-textmuted text-sm font-medium flex-1">{label}</label>
         {/* Number input box */}
-        <div className="flex items-center gap-1 bg-white border border-[#D1DDE8] focus-within:border-primary rounded-input px-3 py-2 transition-colors min-w-[120px]">
+        <div className="flex items-center gap-1 bg-white border border-[#D1DDE8] focus-within:border-primary focus-within:shadow-[0_0_0_3px_rgba(34,86,143,0.08)] rounded-input px-3 py-2 transition-all duration-200 min-w-[120px]">
           {prefix && <span className="text-textmuted text-sm font-mono-num">{prefix}</span>}
           <input
             type="text"
@@ -50,7 +50,7 @@ function InputRow({ input, value, onChange }) {
       <div className="relative h-6 flex items-center">
         <div className="w-full h-1.5 bg-[#E2EBF5] rounded-full relative">
           <div
-            className="h-full bg-gradient-to-r from-primary to-secondary rounded-full"
+            className="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all duration-100 ease-out"
             style={{ width: `${pct}%` }}
           />
         </div>
@@ -65,7 +65,7 @@ function InputRow({ input, value, onChange }) {
           style={{ zIndex: 2 }}
         />
         <div
-          className="absolute w-4 h-4 bg-white border-2 border-primary rounded-full shadow-md pointer-events-none"
+          className="absolute w-4 h-4 bg-white border-2 border-primary rounded-full shadow-md pointer-events-none transition-all duration-100 ease-out"
           style={{ left: `calc(${pct}% - 8px)` }}
         />
       </div>

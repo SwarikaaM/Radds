@@ -1,91 +1,105 @@
+import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowUpRight, Calendar, Clock } from "lucide-react";
+import { ArrowUpRight, ChevronLeft, ChevronRight } from "lucide-react";
 import SectionHeader from "../ui/SectionHeader";
-import ScrollReveal from "../ui/ScrollReveal";
-import { blogPosts } from "../../data/blog";
 import BlogCard from "../blog/BlogCard";
-
-const categoryColors = {
-  "SIP Investing": { bg: "bg-primary/8", text: "text-primary" },
-  "Market Analysis": { bg: "bg-secondary/8", text: "text-secondary" },
-  "Tax Planning": { bg: "bg-success/8", text: "text-success" },
-};
-
-// function BlogCard({ post, index }) {
-//   const colors = categoryColors[post.category] || { bg: "bg-accent/8", text: "text-accent" };
-
-//   return (
-//     <ScrollReveal delay={index * 0.1}>
-//       <Link to={`/blog/${post.slug}`}>
-//         <motion.article
-//           className="group bg-white rounded-card border border-[#E2EBF5] shadow-sm hover:shadow-xl hover:border-primary/20 transition-all duration-300 overflow-hidden cursor-pointer h-full flex flex-col"
-//           whileHover={{ y: -4 }}
-//           transition={{ duration: 0.2 }}
-//         >
-//           {/* Card header accent bar */}
-//           <div className="h-1 bg-gradient-to-r from-primary to-secondary opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-//           <div className="p-6 flex flex-col flex-1">
-//             <div className="flex items-center gap-3 mb-4">
-//               <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full uppercase tracking-wider ${colors.bg} ${colors.text}`}>
-//                 {post.category}
-//               </span>
-//               <span className="flex items-center gap-1 text-textmuted text-xs">
-//                 <Clock size={11} />
-//                 {post.readTime}
-//               </span>
-//             </div>
-
-//             <h3 className="text-textprimary font-semibold text-[15px] leading-snug mb-3 group-hover:text-primary transition-colors duration-200 flex-1">
-//               {post.title}
-//             </h3>
-
-//             <p className="text-textmuted text-sm leading-relaxed mb-5 line-clamp-3">
-//               {post.excerpt}
-//             </p>
-
-//             <div className="flex items-center justify-between pt-4 border-t border-[#F0F4F8] mt-auto">
-//               <span className="flex items-center gap-1.5 text-textmuted text-xs">
-//                 <Calendar size={12} />
-//                 {post.date}
-//               </span>
-//               <span className="flex items-center gap-1 text-primary text-xs font-semibold group-hover:gap-2 transition-all duration-200">
-//                 Read More <ArrowUpRight size={13} />
-//               </span>
-//             </div>
-//           </div>
-//         </motion.article>
-//       </Link>
-//     </ScrollReveal>
-//   );
-// }
+import { blogPosts } from "../../data/blog";
 
 export default function BlogPreview() {
+  const trackRef = useRef(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  const SCROLL_BY = 380;
+
+  const updateScrollState = () => {
+    const el = trackRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 8);
+    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 8);
+  };
+
+  const scroll = (dir) => {
+    const el = trackRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir === "right" ? SCROLL_BY : -SCROLL_BY, behavior: "smooth" });
+    setTimeout(updateScrollState, 350);
+  };
+
   return (
-    <section className="bg-white py-20">
+    <section className="bg-white py-16 overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-12">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
           <SectionHeader
             eyebrow="Insights"
             title="Financial Insights & Market Updates"
-            subtitle="Stay sharp with expert takes on markets, tax, and money management."
+            subtitle="Expert takes on markets, tax, and money management."
             align="left"
             className="mb-0 max-w-lg"
           />
-          <Link
-            to="/blog"
-            className="flex-shrink-0 inline-flex items-center gap-1.5 text-sm font-semibold text-secondary hover:text-primary transition-colors"
-          >
-            View All Articles <ArrowUpRight size={15} />
-          </Link>
+          <div className="flex items-center gap-3 flex-shrink-0">
+            {/* Scroll arrows */}
+            <div className="flex items-center gap-2">
+              <motion.button
+                onClick={() => scroll("left")}
+                className={`w-9 h-9 rounded-full border flex items-center justify-center transition-all duration-200 ${
+                  canScrollLeft
+                    ? "border-primary/30 text-primary bg-primary/5 hover:bg-primary hover:text-white hover:border-primary"
+                    : "border-[#E2EBF5] text-[#C5D3E0] cursor-not-allowed"
+                }`}
+                whileTap={canScrollLeft ? { scale: 0.9 } : {}}
+                aria-label="Previous"
+              >
+                <ChevronLeft size={16} />
+              </motion.button>
+              <motion.button
+                onClick={() => scroll("right")}
+                className={`w-9 h-9 rounded-full border flex items-center justify-center transition-all duration-200 ${
+                  canScrollRight
+                    ? "border-primary/30 text-primary bg-primary/5 hover:bg-primary hover:text-white hover:border-primary"
+                    : "border-[#E2EBF5] text-[#C5D3E0] cursor-not-allowed"
+                }`}
+                whileTap={canScrollRight ? { scale: 0.9 } : {}}
+                aria-label="Next"
+              >
+                <ChevronRight size={16} />
+              </motion.button>
+            </div>
+            <Link
+              to="/blog"
+              className="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold text-secondary hover:text-primary transition-colors"
+            >
+              View All <ArrowUpRight size={14} />
+            </Link>
+          </div>
         </div>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {blogPosts.map((post, i) => (
-            <BlogCard key={post.id} post={post} index={i} />
-          ))}
-        </div>
+      {/* Scrollable track — bleeds to edge */}
+      <div
+        ref={trackRef}
+        onScroll={updateScrollState}
+        className="flex gap-5 overflow-x-auto ml-12 scrollbar-hide px-4 sm:px-6 lg:px-8 pb-2"
+        style={{ scrollSnapType: "x mandatory" }}
+      >
+        {blogPosts.map((post, i) => (
+          <div
+            key={post.id}
+            className="flex-shrink-0 w-[320px] sm:w-[360px]"
+            style={{ scrollSnapAlign: "start" }}
+          >
+            <BlogCard post={post} index={i} />
+          </div>
+        ))}
+        {/* Right padding sentinel */}
+        <div className="flex-shrink-0 w-4 sm:w-6 lg:w-8" />
+      </div>
+
+      <div className="mt-6 text-center sm:hidden">
+        <Link to="/blog" className="inline-flex items-center gap-1.5 text-sm font-semibold text-secondary">
+          View All Articles <ArrowUpRight size={14} />
+        </Link>
       </div>
     </section>
   );

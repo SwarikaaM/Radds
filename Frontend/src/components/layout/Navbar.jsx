@@ -67,8 +67,8 @@ export default function Navbar() {
                 <Link
                   key={link.path}
                   to={link.path}
-                  className={`relative px-3 py-2 text-sm font-medium transition-colors duration-200 rounded ${
-                    isActive ? "text-accent" : "text-white/70 hover:text-white"
+                  className={`relative px-3 py-2 text-sm font-medium rounded transition-all duration-200 ${
+                    isActive ? "text-accent bg-white/5" : "text-white/70 hover:text-white hover:bg-white/6"
                   }`}
                 >
                   {link.label}
@@ -94,13 +94,25 @@ export default function Navbar() {
           </div>
 
           {/* Mobile hamburger */}
-          <button
-            className="lg:hidden p-2 text-white/80 hover:text-white transition-colors"
+          <motion.button
+            className="lg:hidden p-2 text-white/80 hover:text-white transition-colors rounded"
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-label="Toggle menu"
+            whileTap={{ scale: 0.9 }}
           >
-            {mobileOpen ? <X size={22} /> : <Menu size={22} />}
-          </button>
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.span
+                key={mobileOpen ? "close" : "open"}
+                initial={{ opacity: 0, rotate: -90, scale: 0.7 }}
+                animate={{ opacity: 1, rotate: 0, scale: 1 }}
+                exit={{ opacity: 0, rotate: 90, scale: 0.7 }}
+                transition={{ duration: 0.15 }}
+                className="flex"
+              >
+                {mobileOpen ? <X size={22} /> : <Menu size={22} />}
+              </motion.span>
+            </AnimatePresence>
+          </motion.button>
         </div>
       </nav>
 
@@ -134,17 +146,23 @@ export default function Navbar() {
                 {navLinks.map((link) => {
                   const isActive = location.pathname === link.path;
                   return (
-                    <Link
+                    <motion.div
                       key={link.path}
-                      to={link.path}
-                      className={`block px-6 py-3.5 text-sm font-medium transition-colors border-l-2 ${
-                        isActive
-                          ? "text-accent border-accent bg-accent/5"
-                          : "text-white/70 hover:text-white border-transparent hover:border-white/20"
-                      }`}
+                      initial={false}
+                      whileHover={{ x: 3 }}
+                      transition={{ duration: 0.15 }}
                     >
-                      {link.label}
-                    </Link>
+                      <Link
+                        to={link.path}
+                        className={`block px-6 py-3.5 text-sm font-medium transition-all duration-200 border-l-2 ${
+                          isActive
+                            ? "text-accent border-accent bg-accent/5"
+                            : "text-white/70 hover:text-white border-transparent hover:border-white/20 hover:bg-white/4"
+                        }`}
+                      >
+                        {link.label}
+                      </Link>
+                    </motion.div>
                   );
                 })}
               </div>

@@ -15,9 +15,9 @@ export default function CalculatorHero({ title, description }) {
 
       <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
           className="mb-4"
         >
           <Badge icon={Calculator} variant="white">Free Planning Tool</Badge>
@@ -25,26 +25,26 @@ export default function CalculatorHero({ title, description }) {
 
         <motion.h1
           className="font-playfair text-4xl md:text-5xl font-bold text-white leading-tight mb-5"
-          initial={{ opacity: 0, y: 24 }}
+          initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.12, duration: 0.6 }}
+          transition={{ delay: 0.08, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
         >
           {title}
         </motion.h1>
 
         <motion.p
           className="text-white/60 text-lg leading-relaxed max-w-2xl mx-auto mb-8"
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.22, duration: 0.5 }}
+          transition={{ delay: 0.15, duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
         >
           {description}
         </motion.p>
 
         <motion.div
-          initial={{ opacity: 0, y: 12 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.32, duration: 0.5 }}
+          transition={{ delay: 0.22, duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
         >
           <Button variant="accent" size="lg" onClick={scrollToCalc}>
             Calculate Now

@@ -2,6 +2,7 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
+import { motion } from "framer-motion";
 import { formatINR, formatAxis } from "../../utils/format";
 
 const CustomTooltip = ({ active, payload, label }) => {
@@ -27,12 +28,24 @@ const CustomTooltip = ({ active, payload, label }) => {
 export default function CalculatorChart({ chartData, chartSeries }) {
   if (!chartData?.length) return null;
 
+  // Derive a stable key from the last data point so the chart
+  // only re-mounts when data actually changes, not on every render
+  const chartKey = chartData[chartData.length - 1]
+    ? Object.values(chartData[chartData.length - 1]).join("-")
+    : "empty";
+
   return (
     <div>
       <p className="text-textmuted text-xs font-semibold uppercase tracking-wide mb-4">
         Growth Over Time
       </p>
-      <div className="h-64 w-full">
+      <motion.div
+        className="h-64 w-full"
+        key={chartKey}
+        initial={{ opacity: 0.6 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.25 }}
+      >
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
             <defs>
@@ -75,11 +88,14 @@ export default function CalculatorChart({ chartData, chartSeries }) {
                 fill={`url(#grad-${s.key})`}
                 dot={false}
                 activeDot={{ r: 4, fill: s.color, strokeWidth: 0 }}
+                isAnimationActive={true}
+                animationDuration={400}
+                animationEasing="ease-out"
               />
             ))}
           </AreaChart>
         </ResponsiveContainer>
-      </div>
+      </motion.div>
     </div>
   );
 }

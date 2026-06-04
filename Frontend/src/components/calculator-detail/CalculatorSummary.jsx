@@ -28,18 +28,21 @@ function SummaryCard({ label, value, color, index }) {
   const c = colorMap[color] || colorMap.primary;
 
   return (
-    <motion.div
-      key={value}
-      className={`rounded-card p-5 border ${c.bg} ${c.border} text-center`}
-      initial={{ opacity: 0, scale: 0.96 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.3, delay: index * 0.06 }}
-    >
-      <p className={`font-mono-num font-bold text-xl md:text-2xl mb-1.5 ${c.text}`}>
-        {formatINR(value)}
-      </p>
+    <div className={`rounded-card p-5 border ${c.bg} ${c.border} text-center relative overflow-hidden`}>
+      <AnimatePresence mode="popLayout" initial={false}>
+        <motion.p
+          key={value}
+          className={`font-mono-num font-bold text-xl md:text-2xl mb-1.5 ${c.text}`}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+        >
+          {formatINR(value)}
+        </motion.p>
+      </AnimatePresence>
       <p className="text-textmuted text-xs font-medium">{label}</p>
-    </motion.div>
+    </div>
   );
 }
 
@@ -48,17 +51,15 @@ export default function CalculatorSummary({ summaryKeys, results }) {
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      <AnimatePresence mode="wait">
-        {summaryKeys.map((sk, i) => (
-          <SummaryCard
-            key={sk.key}
-            label={sk.label}
-            value={results[sk.key]}
-            color={sk.color}
-            index={i}
-          />
-        ))}
-      </AnimatePresence>
+      {summaryKeys.map((sk, i) => (
+        <SummaryCard
+          key={sk.key}
+          label={sk.label}
+          value={results[sk.key]}
+          color={sk.color}
+          index={i}
+        />
+      ))}
     </div>
   );
 }

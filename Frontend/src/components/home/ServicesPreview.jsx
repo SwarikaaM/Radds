@@ -23,13 +23,13 @@ const colorPairs = [
 
 export default function ServicesPreview() {
   return (
-    <section className="bg-white py-20">
+    <section className="bg-white py-14">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <SectionHeader
           eyebrow="Our Services"
           title="Everything Financial, Under One Roof"
           subtitle="Explore advice-led solutions for every stage of your financial life."
-          className="mb-14"
+          className="mb-10"
         />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
@@ -40,8 +40,8 @@ export default function ServicesPreview() {
               <ScrollReveal key={service.id} delay={i * 0.05}>
                 <Link to={`/services/${service.slug}`}>
                   <motion.div
-                    className={`group relative bg-white rounded-card p-5 border border-[#E2EBF5] shadow-sm transition-all duration-300 cursor-pointer h-full flex flex-col ${colors.border} hover:shadow-lg hover:-translate-y-1`}
-                    whileHover={{ y: -4 }}
+                    className={`group relative bg-white rounded-card p-5 border border-[#E2EBF5] shadow-sm cursor-pointer h-full flex flex-col`}
+                    whileHover={{ y: -4, boxShadow: "0 16px 36px rgba(34,86,143,0.10)", borderColor: "rgba(34,86,143,0.22)" }}
                     transition={{ duration: 0.2 }}
                   >
                     <div className={`w-10 h-10 ${colors.bg} rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-200`}>

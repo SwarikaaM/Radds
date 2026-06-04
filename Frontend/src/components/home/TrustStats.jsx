@@ -1,4 +1,5 @@
 import { Users, Wallet, Award, Star } from "lucide-react";
+import { motion } from "framer-motion";
 import Counter from "../ui/Counter";
 import ScrollReveal from "../ui/ScrollReveal";
 import SectionHeader from "../ui/SectionHeader";
@@ -45,7 +46,7 @@ const stats = [
 
 export default function TrustStats() {
   return (
-    <section className="bg-lightbg py-20">
+    <section className="bg-lightbg py-14">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <SectionHeader
           eyebrow="Why Radds Capital"
@@ -53,15 +54,23 @@ export default function TrustStats() {
           className="mb-14"
         />
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 mb-14">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
           {stats.map((stat, i) => {
             const Icon = stat.icon;
             return (
               <ScrollReveal key={i} delay={i * 0.1}>
-                <div className="bg-white rounded-card p-6 shadow-sm border border-[#E2EBF5] text-center hover:shadow-md transition-shadow duration-300">
-                  <div className={`w-12 h-12 ${stat.bg} rounded-xl flex items-center justify-center mx-auto mb-4`}>
+                <motion.div
+                  className="bg-white rounded-card p-6 shadow-sm border border-[#E2EBF5] text-center cursor-default"
+                  whileHover={{ y: -4, boxShadow: "0 12px 32px rgba(34,86,143,0.10)", borderColor: "rgba(34,86,143,0.2)" }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <motion.div
+                    className={`w-12 h-12 ${stat.bg} rounded-xl flex items-center justify-center mx-auto mb-4`}
+                    whileHover={{ scale: 1.08 }}
+                    transition={{ duration: 0.2 }}
+                  >
                     <Icon size={22} className={stat.color} />
-                  </div>
+                  </motion.div>
                   <div className={`text-3xl font-bold mb-1.5 ${stat.color}`}>
                     <Counter
                       prefix={stat.prefix}
@@ -71,7 +80,7 @@ export default function TrustStats() {
                     />
                   </div>
                   <p className="text-textmuted text-sm font-medium">{stat.label}</p>
-                </div>
+                </motion.div>
               </ScrollReveal>
             );
           })}

@@ -18,7 +18,7 @@ function SliderInput({ label, value, min, max, step, onChange, prefix, suffix, f
       <div className="relative h-5 flex items-center">
         <div className="w-full h-1.5 bg-[#E2EBF5] rounded-full relative">
           <div
-            className="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all"
+            className="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all duration-100 ease-out"
             style={{ width: `${pct}%` }}
           />
         </div>
@@ -33,7 +33,7 @@ function SliderInput({ label, value, min, max, step, onChange, prefix, suffix, f
           style={{ zIndex: 2 }}
         />
         <div
-          className="absolute w-4 h-4 bg-white border-2 border-primary rounded-full shadow-md pointer-events-none transition-all"
+          className="absolute w-4 h-4 bg-white border-2 border-primary rounded-full shadow-md pointer-events-none transition-all duration-100 ease-out"
           style={{ left: `calc(${pct}% - 8px)` }}
         />
       </div>

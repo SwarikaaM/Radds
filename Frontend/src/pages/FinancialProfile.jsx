@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 import Button from "../components/ui/Button";
 import BackToCalculators from "../components/common/BackToCalculators";
@@ -13,6 +14,43 @@ import {
   saveProfile,
   calculateTotals,
 } from "../utils/financialProfile";
+
+function AnimatedSummaryValue({ value, className }) {
+  const [display, setDisplay] = useState(value);
+  const prevRef = useRef(value);
+  const rafRef = useRef(null);
+
+  useEffect(() => {
+    const from = prevRef.current;
+    const to = value;
+    if (from === to) return;
+
+    const duration = 380;
+    const start = performance.now();
+
+    const tick = (now) => {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplay(Math.round(from + (to - from) * eased));
+      if (progress < 1) {
+        rafRef.current = requestAnimationFrame(tick);
+      } else {
+        prevRef.current = to;
+      }
+    };
+
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    rafRef.current = requestAnimationFrame(tick);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  }, [value]);
+
+  return (
+    <p className={`font-mono-num ${className}`}>
+      ₹{display.toLocaleString("en-IN")}
+    </p>
+  );
+}
 
 export default function FinancialProfile() {
   const [profile, setProfile] =
@@ -139,14 +177,14 @@ export default function FinancialProfile() {
   };
 
   return (
-    <main className="py-20 bg-[#F4F8FC] min-h-screen">
+    <main className="py-12 bg-[#F4F8FC] min-h-screen">
       <div className="max-w-5xl mx-auto px-6">
         <BackToCalculators />
-        <h1 className="font-playfair text-5xl font-bold mb-4">
+        <h1 className="font-playfair text-5xl font-bold mb-3">
           Financial Profile
         </h1>
 
-        <p className="text-[#6B7E99] mb-12">
+        <p className="text-[#6B7E99] mb-8">
           Create your financial
           profile and automatically
           use your investment
@@ -283,61 +321,46 @@ export default function FinancialProfile() {
 
             <div className="space-y-4">
               <div>
-                <p className="text-[#6B7E99] text-sm">
-                  Monthly Income
-                </p>
-
-                <p className="font-bold text-2xl">
-                  ₹
-                  {totals.totalIncome.toLocaleString()}
-                </p>
+                <p className="text-[#6B7E99] text-sm">Monthly Income</p>
+                <AnimatedSummaryValue value={totals.totalIncome} className="font-bold text-2xl" />
               </div>
 
               <div>
-                <p className="text-[#6B7E99] text-sm">
-                  Monthly Expenses
-                </p>
-
-                <p className="font-bold text-2xl">
-                  ₹
-                  {totals.totalExpenses.toLocaleString()}
-                </p>
+                <p className="text-[#6B7E99] text-sm">Monthly Expenses</p>
+                <AnimatedSummaryValue value={totals.totalExpenses} className="font-bold text-2xl" />
               </div>
 
               <div>
-                <p className="text-[#6B7E99] text-sm">
-                    Child Expenses
-                </p>
-
-                <p className="font-bold text-2xl">
-                    ₹
-                    {totals.childExpenses.toLocaleString()}
-                </p>
+                <p className="text-[#6B7E99] text-sm">Child Expenses</p>
+                <AnimatedSummaryValue value={totals.childExpenses} className="font-bold text-2xl" />
               </div>
 
-              <div>
-                <p className="text-[#6B7E99] text-sm">
-                  Investment Capacity
-                </p>
-
-                <p className="font-bold text-3xl text-success">
-                  ₹
-                  {totals.investmentCapacity.toLocaleString()}
-                </p>
+              <div className="pt-1 border-t border-[#E2EBF5]">
+                <p className="text-[#6B7E99] text-sm mb-0.5">Investment Capacity</p>
+                <AnimatedSummaryValue
+                  value={totals.investmentCapacity}
+                  className={`font-bold text-3xl ${totals.investmentCapacity >= 0 ? "text-success" : "text-red-500"}`}
+                />
               </div>
 
-              {totals.deficit > 0 && (
-                <div className="mt-4 rounded-lg bg-red-50 border border-red-200 p-4">
-                    <p className="font-medium text-red-700">
-                    Monthly Deficit Detected
-                    </p>
-
-                    <p className="text-sm text-red-600 mt-1">
-                    Expenses exceed income by ₹
-                    {totals.deficit.toLocaleString()}.
-                    </p>
-                </div>
+              <AnimatePresence>
+                {totals.deficit > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                    className="overflow-hidden"
+                  >
+                    <div className="mt-2 rounded-lg bg-red-50 border border-red-200 p-4">
+                      <p className="font-medium text-red-700">Monthly Deficit Detected</p>
+                      <p className="text-sm text-red-600 mt-1">
+                        Expenses exceed income by ₹{totals.deficit.toLocaleString()}.
+                      </p>
+                    </div>
+                  </motion.div>
                 )}
+              </AnimatePresence>
             </div>
           </section>
         </div>
@@ -538,8 +561,8 @@ export default function FinancialProfile() {
               />
 
               <div className="space-y-8 mt-8">
-                {profile.children.map(
-                  (child, index) => (
+                <AnimatePresence initial={false}>
+                  {profile.children.map((child, index) => (
                     <ChildCard
                       key={index}
                       child={child}
@@ -547,8 +570,8 @@ export default function FinancialProfile() {
                       profile={profile}
                       setProfile={setProfile}
                     />
-                  )
-                )}
+                  ))}
+                </AnimatePresence>
               </div>
             </section>
           )}

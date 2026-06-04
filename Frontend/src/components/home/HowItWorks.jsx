@@ -32,7 +32,7 @@ const steps = [
 
 export default function HowItWorks() {
   return (
-    <section className="bg-dark py-20 relative overflow-hidden">
+    <section className="bg-dark py-14 relative overflow-hidden">
       {/* Subtle glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-primary/6 rounded-full blur-[120px] pointer-events-none" />
 
@@ -42,7 +42,7 @@ export default function HowItWorks() {
           title="Your Path to Financial Clarity"
           subtitle="Four simple steps to a wealth plan that actually works for you."
           dark
-          className="mb-16"
+          className="mb-12"
         />
 
         {/* Desktop: horizontal with connecting line */}

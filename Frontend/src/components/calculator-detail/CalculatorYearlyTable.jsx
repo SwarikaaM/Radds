@@ -60,10 +60,13 @@ export default function CalculatorYearlyTable({ tableColumns, tableRowKeys, char
                   </thead>
                   <tbody>
                     {chartData.map((row, i) => (
-                      <tr
+                      <motion.tr
                         key={row.year}
-                        className={`border-t border-[#F0F4F8] transition-colors hover:bg-primary/3 ${
-                          i % 2 === 0 ? "bg-white" : "bg-[#FAFBFD]"
+                        initial={{ opacity: 0, x: -6 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.18, delay: Math.min(i * 0.018, 0.3) }}
+                        className={`border-t border-[#F0F4F8] transition-colors duration-150 cursor-default ${
+                          i % 2 === 0 ? "bg-white hover:bg-primary/[0.03]" : "bg-[#FAFBFD] hover:bg-primary/[0.04]"
                         }`}
                       >
                         {tableRowKeys.map((rk) => (
@@ -88,7 +91,7 @@ export default function CalculatorYearlyTable({ tableColumns, tableRowKeys, char
                             {formatCell(row[rk], rk)}
                           </td>
                         ))}
-                      </tr>
+                      </motion.tr>
                     ))}
                   </tbody>
                 </table>

@@ -29,9 +29,9 @@ export default function SignupPromptCard() {
             ))}
           </div>
         </div>
-        <Button variant="primary" size="sm" className="flex-shrink-0">
-          <FileDown size={14} />
-          Create Free Account
+        <Button variant="primary" size="sm" href="/financial-profile" className="flex-shrink-0">
+          <Sparkles size={14} />
+          Build My Profile
         </Button>
       </div>
     </motion.div>

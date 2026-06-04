@@ -37,13 +37,13 @@ export default function FeaturedCalculator() {
   const chartData = useMemo(() => buildChartData(monthly, rate, years), [monthly, rate, years]);
 
   return (
-    <section className="bg-lightbg py-20">
+    <section className="bg-lightbg py-14">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <SectionHeader
           eyebrow="SIP Calculator"
           title="See Your Money Grow"
           subtitle="Adjust the sliders to instantly see how your SIP builds wealth over time."
-          className="mb-12"
+          className="mb-8"
         />
 
         <ScrollReveal>

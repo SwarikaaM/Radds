@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import { Share2, Globe, PlayCircle, AtSign, Mail, Phone, MapPin } from "lucide-react";
 import logoPNG from "../../assets/logo.png";
 
@@ -28,7 +29,7 @@ export default function Footer() {
       {/* Gradient top line */}
       <div className="h-0.5 bg-gradient-to-r from-primary via-secondary to-accent" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12">
           {/* Col 1: Brand */}
           <div className="space-y-4">
@@ -57,14 +58,17 @@ export default function Footer() {
                 { Icon: PlayCircle, href: "#", label: "YouTube" },
                 { Icon: Globe, href: "#", label: "Website" },
               ].map(({ Icon, href, label }, i) => (
-                <a
+                <motion.a
                   key={i}
                   href={href}
                   className="w-8 h-8 rounded-lg bg-white/8 hover:bg-primary/40 border border-white/10 hover:border-primary/50 flex items-center justify-center text-white/50 hover:text-white transition-all duration-200"
                   aria-label={label}
+                  whileHover={{ y: -2, scale: 1.08 }}
+                  whileTap={{ scale: 0.92 }}
+                  transition={{ duration: 0.15 }}
                 >
                   <Icon size={14} />
-                </a>
+                </motion.a>
               ))}
             </div>
           </div>
@@ -75,12 +79,14 @@ export default function Footer() {
             <ul className="space-y-2.5">
               {serviceLinks.map((link) => (
                 <li key={link.path}>
-                  <Link
-                    to={link.path}
-                    className="text-white/50 hover:text-white text-sm transition-colors duration-150 hover:translate-x-1 inline-block"
-                  >
-                    {link.label}
-                  </Link>
+                  <motion.div whileHover={{ x: 3 }} transition={{ duration: 0.15 }}>
+                    <Link
+                      to={link.path}
+                      className="text-white/50 hover:text-white text-sm transition-colors duration-150 inline-block"
+                    >
+                      {link.label}
+                    </Link>
+                  </motion.div>
                 </li>
               ))}
             </ul>
@@ -92,12 +98,14 @@ export default function Footer() {
             <ul className="space-y-2.5">
               {companyLinks.map((link) => (
                 <li key={link.path}>
-                  <Link
-                    to={link.path}
-                    className="text-white/50 hover:text-white text-sm transition-colors duration-150 hover:translate-x-1 inline-block"
-                  >
-                    {link.label}
-                  </Link>
+                  <motion.div whileHover={{ x: 3 }} transition={{ duration: 0.15 }}>
+                    <Link
+                      to={link.path}
+                      className="text-white/50 hover:text-white text-sm transition-colors duration-150 inline-block"
+                    >
+                      {link.label}
+                    </Link>
+                  </motion.div>
                 </li>
               ))}
             </ul>
@@ -133,7 +141,7 @@ export default function Footer() {
         </div>
 
         {/* Bottom bar */}
-        <div className="mt-12 pt-6 border-t border-white/8 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="mt-8 pt-5 border-t border-white/8 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-white/35 text-xs text-center sm:text-left">
             © 2026 Radds Capital. All rights reserved. SEBI Registered Investment Advisor.
           </p>

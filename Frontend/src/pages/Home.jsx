@@ -10,6 +10,7 @@ import Testimonials from "../components/home/Testimonials";
 import BlogPreview from "../components/home/BlogPreview";
 import HomeFAQ from "../components/home/HomeFAQ";
 import FinalCTA from "../components/home/FinalCTA";
+import AppDownloadSection from "../components/home/AppDownloadSection";
 
 export default function Home() {
   useEffect(() => {
@@ -39,6 +40,7 @@ export default function Home() {
       <Testimonials />
       <BlogPreview />
       <HomeFAQ />
+      <AppDownloadSection />
       <FinalCTA />
     </main>
   );

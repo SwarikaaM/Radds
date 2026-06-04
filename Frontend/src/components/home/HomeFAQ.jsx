@@ -34,7 +34,7 @@ const faqs = [
 
 export default function HomeFAQ() {
   return (
-    <section className="bg-lightbg py-20">
+    <section className="bg-lightbg py-14">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-12 lg:gap-16 items-start">
           {/* Left */}

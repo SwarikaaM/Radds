@@ -6,7 +6,7 @@ import ScrollReveal from "../ui/ScrollReveal";
 
 export default function FinalCTA() {
   return (
-    <section className="relative bg-dark py-24 overflow-hidden">
+    <section className="relative bg-dark py-16 overflow-hidden">
       {/* Gradient orbs */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
