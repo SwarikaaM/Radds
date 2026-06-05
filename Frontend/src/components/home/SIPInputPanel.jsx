@@ -1,4 +1,4 @@
-import { Minus, Plus } from "lucide-react";
+import { motion } from "framer-motion";
 
 function SliderInput({ label, value, min, max, step, onChange, prefix, suffix, formatDisplay }) {
   const pct = ((value - min) / (max - min)) * 100;
@@ -16,10 +16,11 @@ function SliderInput({ label, value, min, max, step, onChange, prefix, suffix, f
         </div>
       </div>
       <div className="relative h-5 flex items-center">
-        <div className="w-full h-1.5 bg-[#E2EBF5] rounded-full relative">
-          <div
-            className="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all duration-100 ease-out"
-            style={{ width: `${pct}%` }}
+        <div className="w-full h-1.5 bg-[#E2EBF5] rounded-full relative overflow-hidden">
+          <motion.div
+            className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary to-secondary rounded-full"
+            animate={{ width: `${pct}%` }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
           />
         </div>
         <input
@@ -29,12 +30,14 @@ function SliderInput({ label, value, min, max, step, onChange, prefix, suffix, f
           step={step}
           value={value}
           onChange={(e) => onChange(Number(e.target.value))}
+          aria-label={label}
           className="absolute inset-0 w-full opacity-0 cursor-pointer h-5"
           style={{ zIndex: 2 }}
         />
-        <div
-          className="absolute w-4 h-4 bg-white border-2 border-primary rounded-full shadow-md pointer-events-none transition-all duration-100 ease-out"
-          style={{ left: `calc(${pct}% - 8px)` }}
+        <motion.div
+          className="absolute w-4 h-4 bg-white border-2 border-primary rounded-full shadow-md pointer-events-none"
+          animate={{ left: `calc(${pct}% - 8px)` }}
+          transition={{ type: "spring", stiffness: 300, damping: 30 }}
         />
       </div>
       <div className="flex justify-between text-[11px] text-textmuted font-mono-num">

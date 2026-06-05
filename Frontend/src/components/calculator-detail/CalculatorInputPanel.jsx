@@ -1,44 +1,67 @@
-import { useCallback } from "react";
-
-function clamp(val, min, max) {
-  return Math.min(max, Math.max(min, val));
-}
+import { useState, useEffect, useCallback } from "react";
 
 function InputRow({ input, value, onChange }) {
   const { key, label, prefix, suffix, min, max, step, helper, decimals } = input;
 
-  const handleSlider = (e) => onChange(key, Number(e.target.value));
+  const [inputValue, setInputValue] = useState("");
+
+  useEffect(() => {
+    setInputValue(
+      decimals
+        ? Number(value).toFixed(decimals)
+        : String(value)
+    );
+  }, [value, decimals]);
+
+  const handleSlider = (e) => {
+    onChange(key, Number(e.target.value));
+  };
 
   const handleNumber = (e) => {
     const raw = e.target.value.replace(/[^0-9.]/g, "");
-    const parsed = decimals ? parseFloat(raw) : parseInt(raw, 10);
-    if (!isNaN(parsed)) onChange(key, clamp(parsed, min, max));
+    setInputValue(raw);
+
+    const parsed = decimals
+      ? parseFloat(raw)
+      : parseInt(raw, 10);
+
+    if (!isNaN(parsed)) {
+      onChange(key, clamp(parsed, min, max));
+    }
   };
 
-  const handleBlur = (e) => {
-    const raw = e.target.value.replace(/[^0-9.]/g, "");
-    const parsed = decimals ? parseFloat(raw) : parseInt(raw, 10);
-    onChange(key, isNaN(parsed) ? min : clamp(parsed, min, max));
+  const handleBlur = () => {
+    const parsed = decimals
+      ? parseFloat(inputValue)
+      : parseInt(inputValue, 10);
+
+    const finalValue = isNaN(parsed)
+      ? min
+      : clamp(parsed, min, max);
+
+    onChange(key, finalValue);
+
+    setInputValue(
+      decimals
+        ? Number(finalValue).toFixed(decimals)
+        : Number(finalValue).toLocaleString("en-IN")
+    );
   };
 
   const pct = ((value - min) / (max - min)) * 100;
-
-  const displayVal = decimals
-    ? Number(value).toFixed(decimals)
-    : Number(value).toLocaleString("en-IN");
 
   return (
     <div className="space-y-2.5">
       <div className="flex items-center justify-between gap-3">
         <label className="text-textmuted text-sm font-medium flex-1">{label}</label>
-        {/* Number input box */}
+        
         <div className="flex items-center gap-1 bg-white border border-[#D1DDE8] focus-within:border-primary focus-within:shadow-[0_0_0_3px_rgba(34,86,143,0.08)] rounded-input px-3 py-2 transition-all duration-200 min-w-[120px]">
           {prefix && <span className="text-textmuted text-sm font-mono-num">{prefix}</span>}
           <input
             type="text"
             inputMode="decimal"
             className="w-full text-sm font-mono-num font-semibold text-textprimary bg-transparent outline-none text-center"
-            value={displayVal}
+            value={inputValue}
             onChange={handleNumber}
             onBlur={handleBlur}
           />

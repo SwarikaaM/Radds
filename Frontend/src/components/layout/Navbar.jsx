@@ -101,7 +101,9 @@ export default function Navbar() {
           {/* Desktop Nav */}
           <div className="hidden lg:flex items-center gap-1">
             {navLinks.map((link) => {
-              const isActive = location.pathname === link.path;
+              const isActive = link.path === "/"
+                ? location.pathname === "/"
+                : location.pathname.startsWith(link.path);
               return (
                 <Link
                   key={link.path}
@@ -171,6 +173,7 @@ export default function Navbar() {
               onClick={() => setMobileOpen(false)}
             />
             <motion.div
+            id="mobile-nav"
               className="fixed top-0 right-0 bottom-0 w-72 bg-dark z-50 lg:hidden flex flex-col shadow-2xl"
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
@@ -187,7 +190,9 @@ export default function Navbar() {
               </div>
               <div className="flex-1 overflow-y-auto py-4">
                 {navLinks.map((link) => {
-                  const isActive = location.pathname === link.path;
+                  const isActive = link.path === "/"
+                    ? location.pathname === "/"
+                    : location.pathname.startsWith(link.path);
                   return (
                     <motion.div
                       key={link.path}

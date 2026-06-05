@@ -40,22 +40,39 @@ export default function ServicesPreview() {
               <ScrollReveal key={service.id} delay={i * 0.05}>
                 <Link to={`/services/${service.slug}`}>
                   <motion.div
-                    className={`group relative bg-white rounded-card p-5 border border-[#E2EBF5] shadow-sm cursor-pointer h-full flex flex-col`}
-                    whileHover={{ y: -4, boxShadow: "0 16px 36px rgba(34,86,143,0.10)", borderColor: "rgba(34,86,143,0.22)" }}
-                    transition={{ duration: 0.2 }}
+                    className={`relative bg-white rounded-card p-5 border border-[#E2EBF5] shadow-sm cursor-pointer h-full flex flex-col overflow-hidden`}
+                    whileHover={{ y: -4, boxShadow: "0 12px 32px -8px rgba(34,86,143,0.12)", borderColor: "rgba(34,86,143,0.22)" }}
+                    transition={{ duration: 0.2, ease: "easeOut" }}
                   >
-                    <div className={`w-10 h-10 ${colors.bg} rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-200`}>
+                    {/* Bottom accent line that slides in */}
+                    <motion.div
+                      className={`absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary to-secondary`}
+                      initial={{ scaleX: 0 }}
+                      whileHover={{ scaleX: 1 }}
+                      transition={{ duration: 0.25, ease: "easeOut" }}
+                      style={{ originX: 0 }}
+                    />
+                    <motion.div
+                      className={`w-10 h-10 ${colors.bg} rounded-xl flex items-center justify-center mb-4`}
+                      whileHover={{ scale: 1.1 }}
+                      transition={{ duration: 0.18 }}
+                    >
                       <Icon size={18} className={colors.text} />
-                    </div>
+                    </motion.div>
                     <h3 className="text-textprimary font-semibold text-sm mb-1.5 leading-snug">
                       {service.title}
                     </h3>
                     <p className="text-textmuted text-xs leading-relaxed flex-1">
                       {service.description}
                     </p>
-                    <div className={`flex items-center gap-1 mt-3 text-xs font-medium ${colors.text} opacity-0 group-hover:opacity-100 transition-opacity duration-200`}>
+                    <motion.div
+                      className={`flex items-center gap-1 mt-3 text-xs font-medium ${colors.text}`}
+                      initial={{ opacity: 0, x: -4 }}
+                      whileHover={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.15 }}
+                    >
                       Explore <ArrowUpRight size={12} />
-                    </div>
+                    </motion.div>
                   </motion.div>
                 </Link>
               </ScrollReveal>

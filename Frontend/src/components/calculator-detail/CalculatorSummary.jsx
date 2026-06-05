@@ -24,30 +24,39 @@ const colorMap = {
   },
 };
 
-function SummaryCard({ label, value, color, index }) {
+function SummaryCard({ label, value, color }) {
   const c = colorMap[color] || colorMap.primary;
 
+  const formattedValue = formatINR(value);
+
+  const valueSize =
+    formattedValue.length > 14
+      ? "text-base md:text-lg"
+      : formattedValue.length > 11
+      ? "text-lg md:text-xl"
+      : "text-xl md:text-2xl";
+
   return (
-    <motion.div
+    <div
       className={`rounded-card p-5 border ${c.bg} ${c.border} text-center`}
-      layout
     >
       <AnimatePresence mode="wait" initial={false}>
         <motion.p
           key={value}
-          // Added 'overflow-x-auto', 'whitespace-nowrap', and custom scrollbar removal for mobile look
-          className={`font-mono-num font-bold pl-1 text-xl md:text-2xl mb-1.5 overflow-x-auto whitespace-nowrap scrollbar-none ${c.text}`}
-          initial={{ opacity: 0, y: 8 }}
+          className={`font-mono-num font-bold mb-1.5 whitespace-nowrap ${valueSize} ${c.text}`}
+          initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: 0.2 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.18, ease: "easeOut" }}
         >
-          {formatINR(value)}
+          {formattedValue}
         </motion.p>
       </AnimatePresence>
-      <p className="text-textmuted text-xs font-medium">{label}</p>
-    </motion.div>
 
+      <p className="text-textmuted text-xs font-medium">
+        {label}
+      </p>
+    </div>
   );
 }
 
