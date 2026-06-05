@@ -33,7 +33,7 @@ export default function Home() {
       <HeroSection />
       {/* <MarketTicker /> */}
       <FeaturedCalculator/>
-      <calculatorCardsPreview/>
+      <CalculatorCardsPreview/>
       <TrustStats />
       <ServicesPreview />
       <HowItWorks />
