@@ -124,7 +124,7 @@ export default function Navbar() {
 
           {/* Desktop CTA */}
           <div className="hidden lg:flex items-center gap-3">
-            <Button variant="accent" size="sm" href="/login">
+            <Button variant="accent" size="sm" href="https://raddsenterprises.investwell.app/app/#/login">
               Login
             </Button>
             {/* <div className="flex flex-wrap gap-3 pt-2"> */}
@@ -212,7 +212,7 @@ export default function Navbar() {
               <div className="p-5 border-t border-white/10 flex flex-col gap-3">
                 <StoreBadge store="android" initial={0.25} />
                 <StoreBadge store="ios" initial={0.32} />
-                <Button variant="ghost" size="md" href="/login" className="w-full justify-center">
+                <Button variant="ghost" size="md" href="https://raddsenterprises.investwell.app/app/#/login" className="w-full justify-center">
                   Login
                 </Button>
                 {/* <Button variant="accent" size="md" href="/contact#book" className="w-full justify-center">
