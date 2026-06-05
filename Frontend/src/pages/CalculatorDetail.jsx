@@ -20,21 +20,23 @@ export default function CalculatorDetail() {
   const { slug } = useParams();
   const config = calculatorRegistry[slug];
 
-  // Redirect unknown slugs to calculators list
-  if (!config) return <Navigate to="/calculators" replace />;
+  // Inputs state — initialised from config defaults (must be before any conditional return)
+  const [values, setValues] = useState(() => config ? getDefaultValues(config) : {});
 
   // Set document title
   useEffect(() => {
+    if (!config) return;
     document.title = `${config.title} | Radds Capital`;
-  }, [config.title]);
-
-  // Inputs state — initialised from config defaults
-  const [values, setValues] = useState(() => getDefaultValues(config));
+  }, [config]);
 
   // Reset inputs when slug changes (navigating between calculators)
   useEffect(() => {
+    if (!config) return;
     setValues(getDefaultValues(config));
   }, [slug]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Redirect unknown slugs to calculators list (after all hooks)
+  if (!config) return <Navigate to="/calculators" replace />;
 
   // Computed results — instant, no debounce needed (pure math)
   const results = useMemo(() => config.compute(values), [config, values]);

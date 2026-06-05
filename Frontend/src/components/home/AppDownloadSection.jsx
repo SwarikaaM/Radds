@@ -102,7 +102,8 @@ function StoreBadge({ store, initial }) {
 
   return (
     <motion.a
-      href="#"
+      href={isAndroid ? "https://play.google.com/store/apps/details?id=com.iw.radds&pcampaignid=web_share" : "https://apps.apple.com/in/app/radds-capital/id6744892358"}
+      target="_blank"
       className="group flex items-center gap-3 bg-white/8 hover:bg-white/12 border border-white/15 hover:border-white/30 rounded-xl px-5 py-3.5 transition-all duration-200"
       initial={{ opacity: 0, y: 16 }}
       whileInView={{ opacity: 1, y: 0 }}

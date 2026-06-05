@@ -1,5 +1,5 @@
 import { TrendingUp, Wallet, DollarSign } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 function fmt(n) {
   if (n >= 10000000) return `₹${(n / 10000000).toFixed(2)} Cr`;
@@ -19,31 +19,23 @@ export default function SIPSummaryCards({ invested, returns, total }) {
       {cards.map((card, i) => {
         const Icon = card.icon;
         return (
-          <div
-            key={i}
-            className={`rounded-card p-4 text-center border relative overflow-hidden ${
+          <motion.div
+            key={`card-${i}`}
+            className={`rounded-card p-4 text-center border ${
               card.highlight
                 ? "border-secondary/30 bg-secondary/5 shadow-md"
                 : "border-[#E2EBF5] bg-white"
             }`}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.08, duration: 0.4 }}
           >
             <div className={`w-8 h-8 ${card.bg} rounded-lg flex items-center justify-center mx-auto mb-2`}>
               <Icon size={15} className={card.color} />
             </div>
-            <AnimatePresence mode="popLayout" initial={false}>
-              <motion.p
-                key={card.value}
-                className={`font-mono-num font-bold text-base ${card.color}`}
-                initial={{ opacity: 0, y: 7 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -7 }}
-                transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-              >
-                {card.value}
-              </motion.p>
-            </AnimatePresence>
+            <p className={`font-mono-num font-bold text-base ${card.color}`}>{card.value}</p>
             <p className="text-textmuted text-[11px] mt-0.5 leading-tight">{card.label}</p>
-          </div>
+          </motion.div>
         );
       })}
     </div>

@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Share2, Globe, PlayCircle, AtSign, Mail, Phone, MapPin } from "lucide-react";
-import logoPNG from "../../assets/logo.png";
+import logoPNG from "../../assets/Logo.png";
 
 const serviceLinks = [
   { label: "Mutual Funds", path: "/services/mutual-funds" },

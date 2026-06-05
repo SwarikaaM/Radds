@@ -28,21 +28,26 @@ function SummaryCard({ label, value, color, index }) {
   const c = colorMap[color] || colorMap.primary;
 
   return (
-    <div className={`rounded-card p-5 border ${c.bg} ${c.border} text-center relative overflow-hidden`}>
-      <AnimatePresence mode="popLayout" initial={false}>
+    <motion.div
+      className={`rounded-card p-5 border ${c.bg} ${c.border} text-center`}
+      layout
+    >
+      <AnimatePresence mode="wait" initial={false}>
         <motion.p
           key={value}
-          className={`font-mono-num font-bold text-xl md:text-2xl mb-1.5 ${c.text}`}
+          // Added 'overflow-x-auto', 'whitespace-nowrap', and custom scrollbar removal for mobile look
+          className={`font-mono-num font-bold pl-1 text-xl md:text-2xl mb-1.5 overflow-x-auto whitespace-nowrap scrollbar-none ${c.text}`}
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.2 }}
         >
           {formatINR(value)}
         </motion.p>
       </AnimatePresence>
       <p className="text-textmuted text-xs font-medium">{label}</p>
-    </div>
+    </motion.div>
+
   );
 }
 

@@ -24,13 +24,13 @@ export default function RelatedPosts({
         Related Articles
       </h3>
 
-      <div className="grid md:grid-cols-3 gap-6">
+      <div className="grid md:grid-cols-3 gap-6 items-stretch">
         {relatedPosts.map((post) => (
           <Card
             key={post.id}
             hover
             glow
-            className="h-full"
+            className="h-full min-h-[300px]"
           >
             <Link
               to={`/blog/${post.slug}`}
@@ -40,11 +40,11 @@ export default function RelatedPosts({
                 {post.category}
               </span>
 
-              <h4 className="font-semibold text-textprimary mb-3 leading-snug">
+              <h4 className="font-semibold text-textprimary mb-3 leading-snug line-clamp-2">
                 {post.title}
               </h4>
 
-              <p className="text-sm text-textmuted flex-1 leading-relaxed">
+              <p className="text-sm text-textmuted flex-1 leading-relaxed line-clamp-5">
                 {post.excerpt}
               </p>
 
