@@ -32,10 +32,10 @@ export default function Home() {
     <main >
       <HeroSection />
       {/* <MarketTicker /> */}
+      <FeaturedCalculator/>
+      <calculatorCardsPreview/>
       <TrustStats />
       <ServicesPreview />
-      <FeaturedCalculator />
-      <CalculatorCardsPreview />
       <HowItWorks />
       <Testimonials />
       <BlogPreview />
