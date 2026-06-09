@@ -14,6 +14,9 @@ import Blog from "./pages/Blog";
 import BlogDetail from "./pages/BlogDetails";
 import Learning from "./pages/Learning";
 import FinancialProfile from "./pages/FinancialProfile";
+import Login from './pages/Login';
+import Signup from './pages/Signup';
+import { AuthProvider } from './context/AuthContext';
 
 const Placeholder = ({ title }) => (
   <div className="min-h-screen bg-lightbg flex items-center justify-center pt-16">
@@ -42,7 +45,8 @@ export default function App() {
         <Route path="/learning" element={<Learning />} />
         <Route path="/careers" element={<Careers />} />
         <Route path="/contact" element={<Contact />} />
-        <Route path="/login" element={<Placeholder title="Login" />} />
+        <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
       </Routes>
       <Footer />
     </BrowserRouter>
