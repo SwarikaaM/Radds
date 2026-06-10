@@ -17,6 +17,9 @@ import FinancialProfile from "./pages/FinancialProfile";
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import { AuthProvider } from './context/AuthContext';
+import SessionExpiredModal from "./components/ui/SessionExpiredModal"; 
+import AdminDashboard from './pages/AdminDashboard';
+import RequireAuth from './components/ui/RequireAuth';
 
 const Placeholder = ({ title }) => (
   <div className="min-h-screen bg-lightbg flex items-center justify-center pt-16">
@@ -38,7 +41,11 @@ export default function App() {
           <Route path="/services/:slug" element={<ServiceDetail />} />
           <Route path="/calculators" element={<Calculators />} />
         <Route path="/calculators/:slug" element={<CalculatorDetail />} />
-        <Route path="/financial-profile" element={<FinancialProfile />} />
+        <Route path="/financial-profile" element={
+          <RequireAuth>
+            <FinancialProfile />
+          </RequireAuth>
+        } />
         <Route path="/faq" element={<FAQ />} />
         <Route path="/about" element={<About />} />
         <Route path="/blog" element={<Blog />} />
@@ -47,9 +54,15 @@ export default function App() {
         <Route path="/careers" element={<Careers />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<Signup />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/admin" element={
+          <RequireAuth>
+            <AdminDashboard />
+          </RequireAuth>
+        } />
       </Routes>
       <Footer />
+      <SessionExpiredModal />
       </AuthProvider>
     </BrowserRouter>
   );

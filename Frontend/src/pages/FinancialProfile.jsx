@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
-
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { useProfile } from '../context/ProfileContext';
+import { calculateTotals } from '../utils/financialProfile';
 import Button from "../components/ui/Button";
 import BackToCalculators from "../components/common/BackToCalculators";
 import ProfileStatusCard from "../components/profile/ProfileStatusCard";
@@ -8,25 +11,44 @@ import ExpenseBreakdownSection from "../components/profile/ExpenseBreakdownSecti
 import ChildCard from "../components/profile/ChildCard";
 import ChildrenSummary from "../components/profile/ChildrenSummary";
 
-import {
-  getProfile,
-  saveProfile,
-  calculateTotals,
-} from "../utils/financialProfile";
+// import {
+//   getProfile,
+//   saveProfile,
+//   calculateTotals,
+// } from "../utils/financialProfile";
 
 export default function FinancialProfile() {
-  const [profile, setProfile] =
-    useState(getProfile());
+  const { user } = useAuth();
+  const { profile: savedProfile, saveProfile, loading: profileLoading } = useProfile();
+  const navigate = useNavigate();
 
-  const [saved, setSaved] =
-    useState(false);
+  const [profile, setProfile] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
+  // Redirect to login if not authenticated
   useEffect(() => {
-    saveProfile(profile);
-  }, [profile]);
+    if (!user) navigate('/login');
+  }, [user, navigate]);
 
-  const totals =
-    calculateTotals(profile);
+  // Load profile from backend context when available
+  useEffect(() => {
+    if (savedProfile) setProfile(savedProfile);
+  }, [savedProfile]);
+
+  if (!user) return null;
+  if (profileLoading || !profile) {
+    return (
+      <main className="py-20 pt-24 bg-[#F4F8FC] min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#22568F] mx-auto mb-4"></div>
+          <p className="text-[#6B7E99]">Loading your financial profile...</p>
+        </div>
+      </main>
+    );
+  }
+
+  const totals = calculateTotals(profile);
 
     const housingFields = [
     {
@@ -109,33 +131,23 @@ export default function FinancialProfile() {
     },
     ];
 
-  const updateSection =
-    (section, field, value) => {
-      setProfile((prev) => ({
-        ...prev,
+ const updateSection = (section, field, value) => {
+    setProfile(prev => ({
+      ...prev,
+      [section]: {
+        ...prev[section],
+        [field]: field === 'name' || field === 'email' || field === 'phone'
+          ? value : Number(value) || 0,
+      },
+    }));
+  };
 
-        [section]: {
-          ...prev[section],
-
-          [field]:
-            field === "name" ||
-            field === "email" ||
-            field === "phone"
-              ? value
-              : Number(value) || 0,
-        },
-      }));
-    };
-
-  const handleSave = () => {
-    saveProfile(profile);
-
+  const handleSave = async () => {
+    setSaving(true);
+    await saveProfile(profile);
+    setSaving(false);
     setSaved(true);
-
-    setTimeout(
-      () => setSaved(false),
-      4000
-    );
+    setTimeout(() => setSaved(false), 4000);
   };
 
   return (
@@ -581,9 +593,10 @@ export default function FinancialProfile() {
 
         <div className="mt-8 flex flex-wrap gap-4 items-center">
             <Button
-                onClick={handleSave}
+                onClick={handleSave} 
+                disabled={saving}
             >
-                Save Financial Profile
+                {saving ? 'Saving...' : saved ? 'Saved ✓' : 'Save Profile'}
             </Button>
 
             <button

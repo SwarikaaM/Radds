@@ -3,6 +3,7 @@ const { body, query, validationResult } = require('express-validator');
 const { supabaseAdmin } = require('../services/supabase');
 const zoho = require('../services/zoho');
 const { authLimiter } = require('../middleware/rateLimiter');
+const { sendBookingConfirmation } = require('../services/email');
 
 const router = express.Router();
 
@@ -68,6 +69,17 @@ router.get('/available-slots', [
     .gte('scheduled_start_at', `${dateStr}T00:00:00Z`)
     .lt('scheduled_start_at', `${dateStr}T23:59:59Z`)
     .in('status', ['confirmed', 'pending']);
+
+  
+  const displayTime = new Date(scheduled_start_at).toLocaleTimeString('en-IN', {
+    hour: '2-digit', minute: '2-digit', hour12: true
+  });
+  sendBookingConfirmation({
+    name, email,
+    date: scheduled_start_at,
+    time: displayTime,
+    purpose,
+  }).catch(err => console.error('Email send failed:', err.message)); // non-blocking
 
   // Get blocked slots for this date
   const { data: blocked } = await supabaseAdmin
@@ -157,13 +169,13 @@ router.post('/', authLimiter, [
 //     return res.status(500).json({ error: 'Booking failed' });
 //   }
 
-if (bookingError) {
-  console.error("SUPABASE INSERT ERROR DETAILS:", bookingError); // 🔍 Add this line!
-  if (bookingError.code === '23505') {
-    return res.status(409).json({ error: 'Slot already taken. Please choose another.' });
-  }
-  return res.status(500).json({ error: `Booking failed: ${bookingError.message}` });
-}
+      if (bookingError) {
+        console.error("SUPABASE INSERT ERROR DETAILS:", bookingError); // 🔍 Add this line!
+        if (bookingError.code === '23505') {
+          return res.status(409).json({ error: 'Slot already taken. Please choose another.' });
+        }
+        return res.status(500).json({ error: `Booking failed: ${bookingError.message}` });
+      }
 
   // Attempt Zoho event creation (stub until July)
   const zohoResult = await zoho.createEvent({ name, email, phone, scheduled_start_at, scheduled_end_at, purpose });

@@ -3,9 +3,15 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import "react-day-picker/dist/style.css";
 import App from "./App.jsx";
+import { AuthProvider } from './context/AuthContext';
+import { ProfileProvider } from './context/ProfileContext';
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <App />
+    <AuthProvider>
+      <ProfileProvider>
+        <App />
+      </ProfileProvider>
+    </AuthProvider>
   </StrictMode>
 );

@@ -86,7 +86,11 @@ export default function CalculatorDetail() {
                   chartData={chartData}
                 />
 
-                <CalculatorExportBar />
+                <CalculatorExportBar
+                  calculatorType={slug}
+                  inputs={values}
+                  results={results}
+                />
                 {/* ── 6. Assumptions */}
                 <CalculatorAssumptions />
 

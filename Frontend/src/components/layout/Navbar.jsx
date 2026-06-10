@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, ChevronDown } from "lucide-react";
+import { Menu, X, ChevronDown, User, LogOut } from "lucide-react";
+import { useAuth } from '../../context/AuthContext';
+import { useProfile } from '../../context/ProfileContext';
+
 import Button from "../ui/Button";
 import logoPNG from "../../assets/Logo.png";
 
@@ -59,7 +62,10 @@ function StoreBadge({ store, initial }) {
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const location = useLocation();
+  const { user, logout } = useAuth();
+  const { hasProfile } = useProfile();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -75,6 +81,16 @@ export default function Navbar() {
     document.body.style.overflow = mobileOpen ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
   }, [mobileOpen]);
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (profileMenuOpen && !e.target.closest('[data-profile-menu]')) {
+        setProfileMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [profileMenuOpen]);
 
   return (
     <>
@@ -126,16 +142,66 @@ export default function Navbar() {
 
           {/* Desktop CTA */}
           <div className="hidden lg:flex items-center gap-3">
+            {/* Investwell login — untouched */}
             <Button variant="accent" size="sm" href="https://raddsenterprises.investwell.app/app/#/login">
               Login
             </Button>
-            {/* <div className="flex flex-wrap gap-3 pt-2"> */}
-              <StoreBadge store="android" initial={0.25} />
-              <StoreBadge store="ios" initial={0.32} />
-            {/* </div> */}
-            {/* <Button variant="accent" size="sm" href="/contact#book">
-              Book Consultation
-            </Button> */}
+
+            {/* Financial Profile auth — separate */}
+            {user ? (
+              <div className="relative" data-profile-menu>
+                <button
+                  onClick={() => setProfileMenuOpen(p => !p)}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 border border-white/15 text-white text-sm transition-all"
+                >
+                  <User size={14} />
+                  <span className="max-w-[100px] truncate">{user.email?.split('@')[0]}</span>
+                  <ChevronDown size={12} className={`transition-transform ${profileMenuOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                <AnimatePresence>
+                  {profileMenuOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50"
+                    >
+                      <div className="px-4 py-3 border-b border-gray-100">
+                        <p className="text-xs text-gray-400">Signed in as</p>
+                        <p className="text-sm font-medium text-gray-700 truncate">{user.email}</p>
+                      </div>
+                      <Link
+                        to="/financial-profile"
+                        onClick={() => setProfileMenuOpen(false)}
+                        className="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        <User size={14} />
+                        {hasProfile ? 'Edit Profile' : 'Create Profile'}
+                      </Link>
+                      <button
+                        onClick={() => { logout(); setProfileMenuOpen(false); }}
+                        className="flex items-center gap-2 w-full px-4 py-3 text-sm text-red-500 hover:bg-red-50 transition-colors border-t border-gray-100"
+                      >
+                        <LogOut size={14} />
+                        Sign Out
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            ) : (
+              <Link
+                to="/login"
+                className="px-3 py-1.5 rounded-lg border border-white/20 text-white/80 hover:text-white hover:bg-white/10 text-sm transition-all"
+              >
+                My Profile
+              </Link>
+            )}
+
+            <StoreBadge store="android" initial={0.25} />
+            <StoreBadge store="ios" initial={0.32} />
           </div>
 
           {/* Mobile hamburger */}
@@ -220,9 +286,35 @@ export default function Navbar() {
                 <Button variant="ghost" size="md" href="https://raddsenterprises.investwell.app/app/#/login" className="w-full justify-center">
                   Login
                 </Button>
-                {/* <Button variant="accent" size="md" href="/contact#book" className="w-full justify-center">
-                  Book Consultation
-                </Button> */}
+                {/* Mobile financial profile auth */}
+                {user ? (
+                  <div className="border-t border-white/10 pt-3 mt-1">
+                    <p className="text-white/40 text-xs px-1 mb-2">Financial Profile</p>
+                    <Link
+                      to="/financial-profile"
+                      className="flex items-center gap-2 text-white/80 hover:text-white text-sm py-2"
+                    >
+                      <User size={14} />
+                      {hasProfile ? 'Edit My Profile' : 'Create My Profile'}
+                    </Link>
+                    <button
+                      onClick={() => { logout(); setMobileOpen(false); }}
+                      className="flex items-center gap-2 text-red-400 hover:text-red-300 text-sm py-2 w-full"
+                    >
+                      <LogOut size={14} />
+                      Sign Out of Profile
+                    </button>
+                  </div>
+                ) : (
+                  <Link
+                    to="/login"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center justify-center gap-2 border border-white/20 rounded-lg py-2.5 text-white/80 hover:text-white text-sm transition-all"
+                  >
+                    <User size={14} />
+                    My Financial Profile
+                  </Link>
+                )}
               </div>
             </motion.div>
           </>

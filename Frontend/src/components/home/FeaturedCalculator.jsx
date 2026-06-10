@@ -1,4 +1,7 @@
 import { useState, useMemo } from "react";
+import { useAuth } from '../../context/AuthContext';
+import { useProfile } from '../../context/ProfileContext';
+
 import SectionHeader from "../ui/SectionHeader";
 import ScrollReveal from "../ui/ScrollReveal";
 import SIPInputPanel from "./SIPInputPanel";
@@ -26,6 +29,30 @@ function buildChartData(monthly, rateAnnual, years) {
       total: Math.round(total),
     };
   });
+}
+
+function ProfileCapacityPill({ setMonthly }) {
+  const { user } = useAuth();
+  const { hasProfile, totals } = useProfile();
+
+  if (!user || !hasProfile || !totals?.investmentCapacity) return null;
+
+  return (
+    <div className="rounded-lg bg-[#F4F8FC] border border-[#D7E7F7] p-3 flex items-center justify-between gap-3">
+      <div>
+        <p className="text-xs text-[#6B7E99]">From your profile</p>
+        <p className="text-sm font-bold text-[#22568F]">
+          ₹{totals.investmentCapacity.toLocaleString('en-IN')}/mo available
+        </p>
+      </div>
+      <button
+        onClick={() => setMonthly(totals.investmentCapacity)}
+        className="text-xs font-medium text-white bg-[#22568F] px-3 py-1.5 rounded-lg hover:bg-[#1a4070] transition-colors whitespace-nowrap"
+      >
+        Use This
+      </button>
+    </div>
+  );
 }
 
 export default function FeaturedCalculator() {
@@ -66,9 +93,9 @@ export default function FeaturedCalculator() {
                   <p className="text-textmuted text-xs mb-2 font-medium">Quick Presets</p>
                   <div className="flex flex-wrap gap-2">
                     {[
-                      { m: 2000, r: 12, y: 10, label: "Starter" },
-                      { m: 5000, r: 12, y: 15, label: "Growth" },
-                      { m: 10000, r: 14, y: 20, label: "Wealth" },
+                      { m: 2000, r: 12, y: 10, label: 'Starter' },
+                      { m: 5000, r: 12, y: 15, label: 'Growth' },
+                      { m: 10000, r: 14, y: 20, label: 'Wealth' },
                     ].map((p) => (
                       <button
                         key={p.label}
@@ -80,6 +107,9 @@ export default function FeaturedCalculator() {
                     ))}
                   </div>
                 </div>
+
+                {/* Profile capacity pill — only shown when logged in with profile */}
+                <ProfileCapacityPill setMonthly={setMonthly} />
               </div>
 
               {/* Output panel */}
