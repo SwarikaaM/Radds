@@ -30,12 +30,13 @@ const Placeholder = ({ title }) => (
 export default function App() {
   return (
     <BrowserRouter>
-      <Navbar />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/services" element={<Services />} />
-        <Route path="/services/:slug" element={<ServiceDetail />} />
-        <Route path="/calculators" element={<Calculators />} />
+      <AuthProvider>
+        <Navbar />
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/services" element={<Services />} />
+          <Route path="/services/:slug" element={<ServiceDetail />} />
+          <Route path="/calculators" element={<Calculators />} />
         <Route path="/calculators/:slug" element={<CalculatorDetail />} />
         <Route path="/financial-profile" element={<FinancialProfile />} />
         <Route path="/faq" element={<FAQ />} />
@@ -49,6 +50,7 @@ export default function App() {
       <Route path="/signup" element={<Signup />} />
       </Routes>
       <Footer />
+      </AuthProvider>
     </BrowserRouter>
   );
 }

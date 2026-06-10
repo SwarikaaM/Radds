@@ -8,7 +8,7 @@ const steps = [
     number: "01",
     icon: CalendarDays,
     title: "Book Free Consultation",
-    description: "Schedule a no-obligation call with our SEBI-registered advisors. No sales pitch — just an honest conversation about your finances.",
+    description: "Schedule a no-obligation call with our AMFI-registered distributors. No sales pitch — just an honest conversation about your finances.",
   },
   {
     number: "02",
@@ -20,13 +20,13 @@ const steps = [
     number: "03",
     icon: FileBarChart,
     title: "Get Custom Plan",
-    description: "Receive a personalized financial roadmap — investments, insurance, tax, and retirement — all mapped to your specific life goals.",
+    description: "Receive a curated set of mutual fund scheme recommendations matched to your risk profile, investment horizon, and goals — with full transparency on applicable commissions.",
   },
   {
     number: "04",
     icon: TrendingUp,
     title: "Grow With Us",
-    description: "We monitor, rebalance, and refine your portfolio quarterly. You focus on living; we focus on growing your wealth.",
+    description: "We review your mutual fund investments periodically and suggest adjustments based on market conditions and scheme performance. You stay informed; your investments stay on track.",
   },
 ];
 

@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Share2, Globe, PlayCircle, AtSign, Mail, Phone, MapPin } from "lucide-react";
 import logoPNG from "../../assets/Logo.png";
+import MFDisclosure from "../ui/MFDisclosure";
 
 const serviceLinks = [
   { label: "Mutual Funds", path: "/services/mutual-funds" },
@@ -26,6 +27,7 @@ const companyLinks = [
 export default function Footer() {
   return (
     <footer className="bg-dark text-white">
+      <MFDisclosure />
       {/* Gradient top line */}
       <div className="h-0.5 bg-gradient-to-r from-primary via-secondary to-accent" />
 
@@ -49,7 +51,7 @@ export default function Footer() {
               "Your Goals. Our Strategy. Your Growth."
             </p>
             <p className="text-white/40 text-xs leading-relaxed">
-              SEBI Registered Investment Advisor. Independent, transparent, and always on your side.
+              AMFI-Registered Mutual Fund Distributor | ARN-XXXXXX. Transparent, client-first MF distribution.
             </p>
             <div className="flex items-center gap-3 pt-2">
               {[
@@ -134,7 +136,7 @@ export default function Footer() {
             </ul>
             <div className="mt-6 p-3 bg-white/5 border border-white/10 rounded-card">
               <p className="text-white/40 text-xs">
-                SEBI Registration No. <span className="font-mono-num text-white/60">INA000012345</span>
+                AMFI ARN: <span className="font-mono-num text-white/60">ARN-334716 | ARN-292158 | ARN- 124053</span>
               </p>
             </div>
           </div>
@@ -143,7 +145,7 @@ export default function Footer() {
         {/* Bottom bar */}
         <div className="mt-8 pt-5 border-t border-white/8 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-white/35 text-xs text-center sm:text-left">
-            © 2026 Radds Capital. All rights reserved. SEBI Registered Investment Advisor.
+            © 2026 Radds Capital. All rights reserved. AMFI-Registered Mutual Fund Distributor | ARN-334716 | ARN-292158 | ARN- 124053
           </p>
           <div className="flex items-center gap-4">
             {["Privacy Policy", "Terms of Use", "Disclaimer"].map((item) => (
@@ -153,6 +155,13 @@ export default function Footer() {
             ))}
           </div>
         </div>
+        <div className="mt-4 pt-4 border-t border-white/5">
+          <p className="text-white/25 text-[10px] leading-relaxed text-center">
+            Mutual Fund investments are subject to market risks. Read all scheme related documents carefully. 
+            Past performance is not indicative of future returns. Radds Capital is an AMFI-Registered Mutual Fund Distributor, 
+            not a SEBI Registered Investment Adviser. Incidental investment guidance provided is not financial planning or investment advisory.
+          </p>
+        </div> 
       </div>
     </footer>
   );

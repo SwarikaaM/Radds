@@ -6,10 +6,12 @@ export default function CalculatorAssumptions() {
       <Info size={15} className="text-textmuted flex-shrink-0 mt-0.5" />
       <p className="text-textmuted text-xs leading-relaxed">
         <span className="font-semibold text-textprimary">Disclaimer: </span>
-        These results are estimates based on the inputs provided. Actual returns may vary due to
-        market conditions, fund expenses, exit loads, taxes, and product selection. Past
-        performance is not indicative of future returns. Please consult a SEBI Registered
-        Investment Advisor before making financial decisions.
+        These results are illustrative estimates based on the inputs provided. Actual returns may vary due to
+        market conditions, fund performance, expenses, exit loads, and taxes. Mutual Fund investments are subject 
+        to market risks. Read all scheme-related documents carefully before investing. 
+        Past performance is not indicative of future returns. 
+        This calculator is a planning tool only and does not constitute investment advice. 
+        Consult a SEBI Registered Investment Adviser for personalised advice.
       </p>
     </div>
   );

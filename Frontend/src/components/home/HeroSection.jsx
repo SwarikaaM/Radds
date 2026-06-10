@@ -415,7 +415,7 @@
 //             transition={{ duration: 0.55 }}
 //           >
 //             <Badge icon={ShieldCheck} variant="white">
-//               SEBI Registered Investment Advisor
+//               AMFI-Registered Mutual Fund Distributor
 //             </Badge>
 //           </motion.div>
 
@@ -467,7 +467,7 @@
 //             animate={{ opacity: 1 }}
 //             transition={{ delay: 0.62, duration: 0.5 }}
 //           >
-//             {["500+ Families", "₹200 Cr+ Managed", "15+ Years"].map((item, i) => (
+//             {["100+ Families", "₹200 Cr+ Distributed", "8+ Years"].map((item, i) => (
 //               <span key={i} className="flex items-center gap-2">
 //                 {i > 0 && <span className="w-1 h-1 bg-white/25 rounded-full" />}
 //                 <span className="text-white/45 text-sm font-mono-num">{item}</span>
@@ -623,8 +623,11 @@ function DreamStat({ icon: Icon, iconColor, iconBg, label, sublabel, target, suf
         <p className="text-white/35 text-[10px] mt-0.5">{sublabel}</p>
       </div>
     </motion.div>
+    
   );
 }
+
+
 
 // ─── Progress bar milestone ───────────────────────────────────────────────────
 function MilestoneBar({ label, pct, color, delay, active }) {
@@ -982,7 +985,7 @@ export default function HeroSection() {
               transition={{ duration: 0.55 }}
             >
               <Badge icon={ShieldCheck} variant="white">
-                SEBI Registered Investment Advisor
+                AMFI-Registered Mutual Fund Distributor
               </Badge>
             </motion.div>
 
@@ -1017,6 +1020,15 @@ export default function HeroSection() {
               ))}
             </div>
 
+            <motion.p
+              className="text-white/30 text-xs"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.1, duration: 0.5 }}
+            >
+              * Illustrative projections only. Mutual Fund investments are subject to market risks.
+            </motion.p>
+
             {/* Goal milestones */}
             {/* <motion.div
               className="glass rounded-2xl p-4 space-y-3"
@@ -1045,7 +1057,7 @@ export default function HeroSection() {
               </Link>
               <Link to="/contact">
                 <Button variant="primary" size="lg">
-                  Get a Free Plan
+                  Book Free Consultation
                 </Button>
               </Link>
             </motion.div>
@@ -1056,7 +1068,7 @@ export default function HeroSection() {
               animate={{ opacity: 1 }}
               transition={{ delay: 1.15, duration: 0.5 }}
             >
-              {["500+ Families", "₹200 Cr+ Managed", "15+ Years"].map((item, i) => (
+              {["100+ Families", "₹200 Cr+ Distributed", "8+ Years"].map((item, i) => (
                 <span key={i} className="flex items-center gap-2">
                   {i > 0 && <span className="w-1 h-1 bg-white/25 rounded-full" />}
                   <span className="text-white/40 text-sm font-mono-num">{item}</span>

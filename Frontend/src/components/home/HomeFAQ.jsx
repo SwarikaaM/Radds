@@ -8,12 +8,12 @@ const faqs = [
   {
     question: "Is Radds Capital SEBI registered?",
     answer:
-      "Yes. Radds Capital is a SEBI Registered Investment Advisor (RIA) operating under SEBI's Investment Advisers Regulations, 2013. Our registration number is INA000012345. You can verify this on the SEBI website under the list of registered investment advisors.",
+      "Radds Capital is registered with AMFI as a Mutual Fund Distributor (ARN-XXXXXX). We are not a SEBI Registered Investment Adviser (RIA). As an MFD, we help clients invest in mutual funds and provide incidental guidance on scheme selection based on your risk profile and goals.",
   },
   {
     question: "Do you charge commissions on the products you recommend?",
     answer:
-      "No. We operate on a fee-only advisory model. We do not earn commissions, trail fees, or any form of distributor income from the products we recommend. Our revenue comes entirely from the advisory fees you pay us — which means our advice is aligned 100% with your interests, not product manufacturers.",
+      "As an AMFI-Registered Mutual Fund Distributor, we earn trail commission from the AMCs on the investments placed through us, as per SEBI regulations. We do not charge advisory fees separately. Our ARN is disclosed on all transactions. We are obligated to recommend only schemes suitable to your risk profile.",
   },
   {
     question: "Can I start investing with a small SIP amount?",
@@ -23,12 +23,12 @@ const faqs = [
   {
     question: "Do you help with insurance and tax planning as well?",
     answer:
-      "Yes — we offer comprehensive financial planning that covers life insurance, health insurance, term plans, tax-saving investments (ELSS, NPS, PPF), and ITR-linked tax optimisation. We believe insurance and tax efficiency are as important as investment returns, and both are built into your financial plan.",
+      "Yes — alongside mutual fund distribution, we can assist with life and health insurance distribution through empanelled insurers. For tax planning, we can guide you on tax-saving investment options like ELSS, NPS, and PPF available within the mutual fund and investment distribution framework. For comprehensive financial planning, we recommend consulting a SEBI Registered Investment Adviser.",
   },
   {
     question: "How do I book a consultation with Radds Capital?",
     answer:
-      "Simply click 'Book Consultation' on our website, fill in your preferred time slot, and one of our advisors will call you. The first consultation is completely free, lasts about 45 minutes, and covers your current financial situation, goals, and a broad outline of how we can help. No commitment required.",
+      "Click 'Book Consultation', fill in your preferred time slot, and one of our team will connect with you. The initial discussion covers your investment goals, risk profile, and how mutual fund distribution through Radds Capital can serve your needs. No commitment required.",
   },
 ];
 

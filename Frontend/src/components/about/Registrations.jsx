@@ -1,11 +1,11 @@
 import { BadgeCheck } from "lucide-react";
 
 const items = [
-  "SEBI Registered",
-  "AMFI ARN",
-  "IRDAI Partner",
+  "AMFI-Registered MFD",
+  "ARN Holder",
+  "IRDAI Empanelled",
   "Mutual Fund Distributor",
-  "Insurance Advisory Support",
+  "Insurance Distribution Partner",
 ];
 
 export default function Registrations() {
