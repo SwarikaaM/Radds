@@ -1,8 +1,15 @@
+import { useNavigate } from 'react-router-dom';
 import { useProfile } from '../../context/ProfileContext';
 
 export default function SessionExpiredModal() {
   const { sessionExpired, reauth } = useProfile();
+  const navigate = useNavigate();
   if (!sessionExpired) return null;
+
+  function handleReauth() {
+    reauth();
+    navigate('/login', { state: { from: { pathname: '/financial-profile' } } });
+  }
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
@@ -14,7 +21,7 @@ export default function SessionExpiredModal() {
           Please sign in again to continue.
         </p>
         <button
-          onClick={reauth}
+          onClick={handleReauth}
           className="w-full bg-blue-600 text-white py-2.5 rounded-lg font-medium hover:bg-blue-700"
         >
           Sign In Again

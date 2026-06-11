@@ -71,15 +71,15 @@ router.get('/available-slots', [
     .in('status', ['confirmed', 'pending']);
 
   
-  const displayTime = new Date(scheduled_start_at).toLocaleTimeString('en-IN', {
-    hour: '2-digit', minute: '2-digit', hour12: true
-  });
-  sendBookingConfirmation({
-    name, email,
-    date: scheduled_start_at,
-    time: displayTime,
-    purpose,
-  }).catch(err => console.error('Email send failed:', err.message)); // non-blocking
+  // const displayTime = new Date(scheduled_start_at).toLocaleTimeString('en-IN', {
+  //   hour: '2-digit', minute: '2-digit', hour12: true
+  // });
+  // sendBookingConfirmation({
+  //   name, email,
+  //   date: scheduled_start_at,
+  //   time: displayTime,
+  //   purpose,
+  // }).catch(err => console.error('Email send failed:', err.message)); // non-blocking
 
   // Get blocked slots for this date
   const { data: blocked } = await supabaseAdmin
@@ -196,6 +196,17 @@ router.post('/', authLimiter, [
       .update({ status: 'confirmed', updated_at: new Date().toISOString() })
       .eq('id', booking.id);
   }
+
+  // Send confirmation email (non-blocking)
+  const displayTime = new Date(scheduled_start_at).toLocaleTimeString('en-IN', {
+    hour: '2-digit', minute: '2-digit', hour12: true
+  });
+  sendBookingConfirmation({
+    name, email,
+    date: scheduled_start_at,
+    time: displayTime,
+    purpose,
+  }).catch(err => console.error('Email send failed:', err.message));
 
   res.status(201).json({
     message: 'Booking confirmed',

@@ -1,17 +1,55 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 
 function SliderInput({ label, value, min, max, step, onChange, prefix, suffix, formatDisplay }) {
   const pct = ((value - min) / (max - min)) * 100;
+  const [editing, setEditing] = useState(false);
+  const [raw, setRaw] = useState('');
+
+  function startEdit() {
+    setRaw(String(value));
+    setEditing(true);
+  }
+
+  function commitEdit() {
+    setEditing(false);
+    const n = parseFloat(raw);
+    if (!isNaN(n)) {
+      onChange(Math.min(max, Math.max(min, n)));
+    }
+  }
+
+  function handleKey(e) {
+    if (e.key === 'Enter') commitEdit();
+    if (e.key === 'Escape') setEditing(false);
+  }
 
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <label className="text-textmuted text-sm font-medium">{label}</label>
-        <div className="flex items-center gap-1 bg-lightbg border border-[#E2EBF5] rounded-input px-3 py-1.5">
+        <div className="flex items-center gap-1 bg-lightbg border border-[#E2EBF5] rounded-input px-3 py-1.5 min-w-[90px]">
           {prefix && <span className="text-textmuted text-sm">{prefix}</span>}
-          <span className="font-mono-num font-semibold text-sm text-textprimary min-w-[60px] text-center">
-            {formatDisplay ? formatDisplay(value) : value.toLocaleString("en-IN")}
-          </span>
+          {editing ? (
+            <input
+              type="text"
+              inputMode="numeric"
+              autoFocus
+              value={raw}
+              onChange={e => setRaw(e.target.value)}
+              onBlur={commitEdit}
+              onKeyDown={handleKey}
+              className="font-mono-num font-semibold text-sm text-textprimary w-[70px] bg-transparent outline-none text-center"
+            />
+          ) : (
+            <span
+              className="font-mono-num font-semibold text-sm text-textprimary min-w-[60px] text-center cursor-text hover:text-primary transition-colors"
+              onClick={startEdit}
+              title="Click to type a value"
+            >
+              {formatDisplay ? formatDisplay(value) : value.toLocaleString("en-IN")}
+            </span>
+          )}
           {suffix && <span className="text-textmuted text-sm">{suffix}</span>}
         </div>
       </div>
@@ -25,10 +63,7 @@ function SliderInput({ label, value, min, max, step, onChange, prefix, suffix, f
         </div>
         <input
           type="range"
-          min={min}
-          max={max}
-          step={step}
-          value={value}
+          min={min} max={max} step={step} value={value}
           onChange={(e) => onChange(Number(e.target.value))}
           aria-label={label}
           className="absolute inset-0 w-full opacity-0 cursor-pointer h-5"

@@ -20,6 +20,7 @@ import { AuthProvider } from './context/AuthContext';
 import SessionExpiredModal from "./components/ui/SessionExpiredModal"; 
 import AdminDashboard from './pages/AdminDashboard';
 import RequireAuth from './components/ui/RequireAuth';
+import ForgotPassword from './pages/ForgotPassword';
 
 const Placeholder = ({ title }) => (
   <div className="min-h-screen bg-lightbg flex items-center justify-center pt-16">
@@ -54,6 +55,7 @@ export default function App() {
         <Route path="/careers" element={<Careers />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/admin" element={
           <RequireAuth>
