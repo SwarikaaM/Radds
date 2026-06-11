@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { FileDown, TableProperties, Loader2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { useProfile } from '../../context/ProfileContext';
+import { useProfile } from '../../context/useProfile';
 
 export default function CalculatorExportBar({ calculatorType, inputs, results }) {
   const { user, apiFetch } = useAuth();

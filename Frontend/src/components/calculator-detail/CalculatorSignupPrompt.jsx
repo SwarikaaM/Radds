@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import Button from '../ui/Button';
 import { useAuth } from '../../context/AuthContext';
-import { useProfile } from '../../context/ProfileContext';
+import { useProfile } from '../../context/useProfile';
 
 export default function CalculatorSignupPrompt() {
   const navigate = useNavigate();

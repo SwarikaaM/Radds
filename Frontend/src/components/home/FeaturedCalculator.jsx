@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useAuth } from '../../context/AuthContext';
-import { useProfile } from '../../context/ProfileContext';
+import { useProfile } from '../../context/useProfile';
 
 import SectionHeader from "../ui/SectionHeader";
 import ScrollReveal from "../ui/ScrollReveal";

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useProfile } from '../../context/ProfileContext';
+import { useProfile } from '../../context/useProfile';
 import { useAuth } from '../../context/AuthContext';
 
 export default function CalculatorProfileSummary() {

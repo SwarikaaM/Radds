@@ -3,7 +3,7 @@ import { FileDown, Sparkles, CheckCircle2, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../ui/Button';
 import { useAuth } from '../../context/AuthContext';
-import { useProfile } from '../../context/ProfileContext';
+import { useProfile } from '../../context/useProfile';
 
 export default function SignupPromptCard() {
   const navigate = useNavigate();

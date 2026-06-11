@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ChevronDown, User, LogOut } from "lucide-react";
 import { useAuth } from '../../context/AuthContext';
-import { useProfile } from '../../context/ProfileContext';
+import { useProfile } from '../../context/useProfile';
 
 import Button from "../ui/Button";
 import logoPNG from "../../assets/Logo.png";

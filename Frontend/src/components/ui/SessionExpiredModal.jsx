@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { useProfile } from '../../context/ProfileContext';
+import { useProfile } from '../../context/useProfile';
 
 export default function SessionExpiredModal() {
   const { sessionExpired, reauth } = useProfile();

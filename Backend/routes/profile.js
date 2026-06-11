@@ -57,12 +57,35 @@ router.get('/', async (req, res) => {
 router.post('/', [
   body('age').optional().isInt({ min: 18, max: 100 }),
   body('risk_preference').optional().isIn(['conservative', 'moderate', 'aggressive']),
+  body('date_of_plan').optional().isISO8601(),
+  body('sip_amount').optional().isFloat({ min: 0 }),
+  body('sip_growth_rate').optional().isFloat({ min: 0, max: 1 }),
+  body('sip_start_age').optional().isInt({ min: 18, max: 80 }),
+  body('one_time_invest').optional().isFloat({ min: 0 }),
+  body('swp_withdrawal').optional().isFloat({ min: 0 }),
+  body('swp_corpus').optional().isFloat({ min: 0 }),
+  body('swp_growth_rate').optional().isFloat({ min: 0, max: 1 }),
+  body('home_loan_amount').optional().isFloat({ min: 0 }),
+  body('home_loan_emi').optional().isFloat({ min: 0 }),
+  body('home_loan_tenure').optional().isInt({ min: 1, max: 360 }),
+  body('home_loan_rate').optional().isFloat({ min: 0, max: 1 }),
+  body('term_insurance_premium').optional().isFloat({ min: 0 }),
+  body('term_insurance_sip').optional().isFloat({ min: 0 }),
+  body('term_insurance_tenure').optional().isInt({ min: 1, max: 40 }),
+  body('term_growth_rate').optional().isFloat({ min: 0, max: 1 }),
 ], async (req, res) => {
   if (!validate(req, res)) return;
-  const { age, risk_preference } = req.body;
+  const allowed = [
+    'age','risk_preference','date_of_plan',
+    'sip_amount','sip_growth_rate','sip_start_age','one_time_invest',
+    'swp_withdrawal','swp_corpus','swp_growth_rate',
+    'home_loan_amount','home_loan_emi','home_loan_tenure','home_loan_rate',
+    'term_insurance_premium','term_insurance_sip','term_insurance_tenure','term_growth_rate',
+  ];
+  const fields = Object.fromEntries(Object.entries(req.body).filter(([k]) => allowed.includes(k)));
   const { data, error } = await supabaseAdmin
     .from('financial_profiles')
-    .upsert({ user_id: req.userId, age, risk_preference }, { onConflict: 'user_id' })
+    .upsert({ user_id: req.userId, ...fields }, { onConflict: 'user_id' })
     .select().single();
   if (error) return res.status(400).json({ error: error.message });
   res.status(201).json(data);
@@ -94,11 +117,12 @@ router.post('/income', [
   body('source_type').isIn(['salary','business','rental','investment','other']),
   body('label').trim().isLength({ min: 1, max: 100 }).escape(),
   body('amount').isFloat({ min: 0 }),
+  body('is_secondary').optional().isBoolean(),
 ], async (req, res) => {
   if (!validate(req, res)) return;
-  const { source_type, label, amount } = req.body;
+  const { source_type, label, amount, is_secondary } = req.body;
   const { data, error } = await supabaseAdmin.from('income_sources')
-    .insert({ user_id: req.userId, source_type, label, amount })
+    .insert({ user_id: req.userId, source_type, label, amount, is_secondary: is_secondary || false })
     .select().single();
   if (error) return res.status(400).json({ error: error.message });
   res.status(201).json(data);
@@ -247,11 +271,12 @@ router.post('/liabilities', [
   body('emi').optional().isFloat({ min: 0 }),
   body('interest_rate').optional().isFloat({ min: 0, max: 100 }),
   body('remaining_months').optional().isInt({ min: 0 }),
+  body('is_credit_card').optional().isBoolean(),
 ], async (req, res) => {
   if (!validate(req, res)) return;
-  const { label, loan_type, outstanding_amount, emi, interest_rate, remaining_months } = req.body;
+  const { label, loan_type, outstanding_amount, emi, interest_rate, remaining_months, is_credit_card } = req.body;
   const { data, error } = await supabaseAdmin.from('liabilities')
-    .insert({ user_id: req.userId, label, loan_type, outstanding_amount, emi, interest_rate, remaining_months })
+    .insert({ user_id: req.userId, label, loan_type, outstanding_amount, emi, interest_rate, remaining_months, is_credit_card: is_credit_card || false })
     .select().single();
   if (error) return res.status(400).json({ error: error.message });
   res.status(201).json(data);
@@ -259,7 +284,7 @@ router.post('/liabilities', [
 
 router.put('/liabilities/:id', [param('id').isUUID()], async (req, res) => {
   if (!validate(req, res)) return;
-  const allowed = ['label','loan_type','outstanding_amount','emi','interest_rate','remaining_months'];
+  const allowed = ['label','loan_type','outstanding_amount','emi','interest_rate','remaining_months','is_credit_card'];
   const updates = Object.fromEntries(Object.entries(req.body).filter(([k]) => allowed.includes(k)));
   updates.updated_at = new Date().toISOString();
   const { data, error } = await supabaseAdmin.from('liabilities')
@@ -283,15 +308,16 @@ router.delete('/liabilities/:id', [param('id').isUUID()], async (req, res) => {
 // ============================================================
 
 router.post('/investments', [
-  body('investment_type').isIn(['mf','stocks','fd','ppf','nps','real_estate','gold','other']),
+  body('investment_type').isIn(['mf','stocks','fd','ppf','nps','real_estate','gold','bank','bonds','insurance_cv','other']),
+  body('asset_class').optional().isIn(['financial','physical']),
   body('label').trim().isLength({ min: 1, max: 100 }).escape(),
   body('current_value').optional().isFloat({ min: 0 }),
   body('monthly_contribution').optional().isFloat({ min: 0 }),
 ], async (req, res) => {
   if (!validate(req, res)) return;
-  const { investment_type, label, current_value, monthly_contribution } = req.body;
+  const { investment_type, label, current_value, monthly_contribution, asset_class } = req.body;
   const { data, error } = await supabaseAdmin.from('investments')
-    .insert({ user_id: req.userId, investment_type, label, current_value, monthly_contribution })
+    .insert({ user_id: req.userId, investment_type, label, current_value, monthly_contribution, asset_class: asset_class || 'financial' })
     .select().single();
   if (error) return res.status(400).json({ error: error.message });
   res.status(201).json(data);
@@ -299,7 +325,7 @@ router.post('/investments', [
 
 router.put('/investments/:id', [param('id').isUUID()], async (req, res) => {
   if (!validate(req, res)) return;
-  const allowed = ['investment_type','label','current_value','monthly_contribution'];
+  const allowed = ['investment_type','label','current_value','monthly_contribution','asset_class'];
   const updates = Object.fromEntries(Object.entries(req.body).filter(([k]) => allowed.includes(k)));
   updates.updated_at = new Date().toISOString();
   const { data, error } = await supabaseAdmin.from('investments')
