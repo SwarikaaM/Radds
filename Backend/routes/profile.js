@@ -5,9 +5,8 @@ const requireAuth = require('../middleware/auth');
 const { auditLog } = require('../middleware/audit');
 
 const router = express.Router();
-router.use(requireAuth); // all profile routes require auth
+router.use(requireAuth);
 
-// Helper: send validation errors
 function validate(req, res) {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -17,16 +16,13 @@ function validate(req, res) {
   return true;
 }
 
-// ============================================================
-// FINANCIAL PROFILE (top level)
-// ============================================================
-
-// GET /api/profile — full profile with all sections
+// GET /api/profile — full profile
 router.get('/', async (req, res) => {
   const uid = req.userId;
   try {
-    const [profile, income, expenses, children, childExpenses, liabilities, investments, insurance, goals] = await Promise.all([
+    const [profileRes, userRes, income, expenses, children, childExpenses, liabilities, investments, insurance, goals] = await Promise.all([
       supabaseAdmin.from('financial_profiles').select('*').eq('user_id', uid).single(),
+      supabaseAdmin.from('user_profiles').select('display_name, email, phone').eq('id', uid).single(),
       supabaseAdmin.from('income_sources').select('*').eq('user_id', uid),
       supabaseAdmin.from('expense_items').select('*').eq('user_id', uid),
       supabaseAdmin.from('children').select('*').eq('user_id', uid),
@@ -38,7 +34,8 @@ router.get('/', async (req, res) => {
     ]);
 
     res.json({
-      profile: profile.data,
+      user: userRes.data,
+      profile: profileRes.data,
       income: income.data || [],
       expenses: expenses.data || [],
       children: children.data || [],
@@ -49,18 +46,19 @@ router.get('/', async (req, res) => {
       goals: goals.data || [],
     });
   } catch (err) {
+    console.error('GET /api/profile error:', err);
     res.status(500).json({ error: 'Failed to fetch profile' });
   }
 });
 
-// POST /api/profile — create financial profile
+// POST /api/profile — upsert financial_profiles top-level fields
 router.post('/', [
-  body('age').optional().isInt({ min: 18, max: 100 }),
-  body('risk_preference').optional().isIn(['conservative', 'moderate', 'aggressive']),
-  body('date_of_plan').optional().isISO8601(),
+  body('age').optional({ nullable: true }).isInt({ min: 18, max: 100 }),
+  body('risk_preference').optional({ nullable: true }).isIn(['conservative', 'moderate', 'aggressive', '']),
+  body('date_of_plan').optional({ nullable: true }).isISO8601(),
   body('sip_amount').optional().isFloat({ min: 0 }),
   body('sip_growth_rate').optional().isFloat({ min: 0, max: 1 }),
-  body('sip_start_age').optional().isInt({ min: 18, max: 80 }),
+  body('sip_start_age').optional().isInt({ min: 1, max: 80 }),
   body('one_time_invest').optional().isFloat({ min: 0 }),
   body('swp_withdrawal').optional().isFloat({ min: 0 }),
   body('swp_corpus').optional().isFloat({ min: 0 }),
@@ -82,64 +80,70 @@ router.post('/', [
     'home_loan_amount','home_loan_emi','home_loan_tenure','home_loan_rate',
     'term_insurance_premium','term_insurance_sip','term_insurance_tenure','term_growth_rate',
   ];
-  const fields = Object.fromEntries(Object.entries(req.body).filter(([k]) => allowed.includes(k)));
+  const fields = {};
+  for (const [k, v] of Object.entries(req.body)) {
+    if (allowed.includes(k)) {
+      if (v === '' || v === null) fields[k] = null;
+      else fields[k] = v;
+    }
+  }
   const { data, error } = await supabaseAdmin
     .from('financial_profiles')
     .upsert({ user_id: req.userId, ...fields }, { onConflict: 'user_id' })
     .select().single();
-  if (error) return res.status(400).json({ error: error.message });
+  if (error) {
+    console.error('POST /api/profile error:', error);
+    return res.status(400).json({ error: error.message });
+  }
   res.status(201).json(data);
 });
 
-// PATCH /api/profile — update top-level profile fields
-router.patch('/', [
-  body('age').optional().isInt({ min: 18, max: 100 }),
-  body('risk_preference').optional().isIn(['conservative', 'moderate', 'aggressive']),
-], auditLog({ action: 'profile.update', entityType: 'financial_profiles' }), async (req, res) => {
+// PATCH /api/profile/user — update name, phone directly on user_profiles
+// Email changes go through Supabase Auth (requires re-verification) — handled separately
+router.patch('/user', [
+  body('display_name').optional().trim().isLength({ min: 1, max: 100 }),
+  body('phone').optional().trim().matches(/^[6-9]\d{9}$/).withMessage('Enter a valid 10-digit Indian mobile number'),
+], async (req, res) => {
   if (!validate(req, res)) return;
-  const allowed = ['age', 'risk_preference'];
-  const updates = Object.fromEntries(Object.entries(req.body).filter(([k]) => allowed.includes(k)));
-  updates.updated_at = new Date().toISOString();
+  const updates = {};
+  if (req.body.display_name !== undefined) updates.display_name = req.body.display_name;
+  if (req.body.phone !== undefined) updates.phone = req.body.phone;
+  if (Object.keys(updates).length === 0) return res.json({ message: 'Nothing to update' });
+
   const { data, error } = await supabaseAdmin
-    .from('financial_profiles')
+    .from('user_profiles')
     .update(updates)
-    .eq('user_id', req.userId)
-    .select().single();
+    .eq('id', req.userId)
+    .select('display_name, email, phone')
+    .single();
   if (error) return res.status(400).json({ error: error.message });
   res.json(data);
 });
 
-// ============================================================
-// INCOME SOURCES
-// ============================================================
-
+// ── INCOME ──────────────────────────────────────────────────────────
 router.post('/income', [
   body('source_type').isIn(['salary','business','rental','investment','other']),
-  body('label').trim().isLength({ min: 1, max: 100 }).escape(),
+  body('label').trim().isLength({ min: 1, max: 100 }),
   body('amount').isFloat({ min: 0 }),
   body('is_secondary').optional().isBoolean(),
 ], async (req, res) => {
   if (!validate(req, res)) return;
   const { source_type, label, amount, is_secondary } = req.body;
   const { data, error } = await supabaseAdmin.from('income_sources')
-    .insert({ user_id: req.userId, source_type, label, amount, is_secondary: is_secondary || false })
+    .insert({ user_id: req.userId, source_type, label, amount, is_secondary: !!is_secondary })
     .select().single();
   if (error) return res.status(400).json({ error: error.message });
   res.status(201).json(data);
 });
 
-router.put('/income/:id', [
-  param('id').isUUID(),
-  body('amount').optional().isFloat({ min: 0 }),
-  body('label').optional().trim().isLength({ min: 1, max: 100 }).escape(),
-], async (req, res) => {
+router.put('/income/:id', [param('id').isUUID()], async (req, res) => {
   if (!validate(req, res)) return;
-  const allowed = ['source_type','label','amount'];
-  const updates = Object.fromEntries(Object.entries(req.body).filter(([k]) => allowed.includes(k)));
+  const updates = Object.fromEntries(
+    Object.entries(req.body).filter(([k]) => ['source_type','label','amount'].includes(k))
+  );
   updates.updated_at = new Date().toISOString();
   const { data, error } = await supabaseAdmin.from('income_sources')
-    .update(updates).eq('id', req.params.id).eq('user_id', req.userId)
-    .select().single();
+    .update(updates).eq('id', req.params.id).eq('user_id', req.userId).select().single();
   if (error) return res.status(400).json({ error: error.message });
   if (!data) return res.status(404).json({ error: 'Not found' });
   res.json(data);
@@ -147,42 +151,33 @@ router.put('/income/:id', [
 
 router.delete('/income/:id', [param('id').isUUID()], async (req, res) => {
   if (!validate(req, res)) return;
-  const { error } = await supabaseAdmin.from('income_sources')
-    .delete().eq('id', req.params.id).eq('user_id', req.userId);
-  if (error) return res.status(400).json({ error: error.message });
+  await supabaseAdmin.from('income_sources').delete().eq('id', req.params.id).eq('user_id', req.userId);
   res.json({ message: 'Deleted' });
 });
 
-// ============================================================
-// EXPENSE ITEMS
-// ============================================================
-
+// ── EXPENSES ─────────────────────────────────────────────────────────
 router.post('/expenses', [
   body('category').isIn(['housing','utilities','living','transport','medical','insurance','lifestyle','other']),
-  body('label').trim().isLength({ min: 1, max: 100 }).escape(),
-  body('key').trim().isLength({ min: 1, max: 50 }).escape(),
+  body('label').trim().isLength({ min: 1, max: 100 }),
+  body('key').trim().isLength({ min: 1, max: 50 }),
   body('amount').isFloat({ min: 0 }),
 ], async (req, res) => {
   if (!validate(req, res)) return;
   const { category, label, key, amount } = req.body;
   const { data, error } = await supabaseAdmin.from('expense_items')
-    .insert({ user_id: req.userId, category, label, key, amount })
-    .select().single();
+    .insert({ user_id: req.userId, category, label, key, amount }).select().single();
   if (error) return res.status(400).json({ error: error.message });
   res.status(201).json(data);
 });
 
-router.put('/expenses/:id', [
-  param('id').isUUID(),
-  body('amount').optional().isFloat({ min: 0 }),
-], async (req, res) => {
+router.put('/expenses/:id', [param('id').isUUID()], async (req, res) => {
   if (!validate(req, res)) return;
-  const allowed = ['category','label','key','amount'];
-  const updates = Object.fromEntries(Object.entries(req.body).filter(([k]) => allowed.includes(k)));
+  const updates = Object.fromEntries(
+    Object.entries(req.body).filter(([k]) => ['category','label','key','amount'].includes(k))
+  );
   updates.updated_at = new Date().toISOString();
   const { data, error } = await supabaseAdmin.from('expense_items')
-    .update(updates).eq('id', req.params.id).eq('user_id', req.userId)
-    .select().single();
+    .update(updates).eq('id', req.params.id).eq('user_id', req.userId).select().single();
   if (error) return res.status(400).json({ error: error.message });
   if (!data) return res.status(404).json({ error: 'Not found' });
   res.json(data);
@@ -190,18 +185,13 @@ router.put('/expenses/:id', [
 
 router.delete('/expenses/:id', [param('id').isUUID()], async (req, res) => {
   if (!validate(req, res)) return;
-  const { error } = await supabaseAdmin.from('expense_items')
-    .delete().eq('id', req.params.id).eq('user_id', req.userId);
-  if (error) return res.status(400).json({ error: error.message });
+  await supabaseAdmin.from('expense_items').delete().eq('id', req.params.id).eq('user_id', req.userId);
   res.json({ message: 'Deleted' });
 });
 
-// ============================================================
-// CHILDREN
-// ============================================================
-
+// ── CHILDREN ─────────────────────────────────────────────────────────
 router.post('/children', [
-  body('name').trim().isLength({ min: 1, max: 60 }).escape(),
+  body('name').trim().isLength({ min: 1, max: 60 }),
   body('age').isInt({ min: 0, max: 25 }),
 ], async (req, res) => {
   if (!validate(req, res)) return;
@@ -209,63 +199,46 @@ router.post('/children', [
   const { data, error } = await supabaseAdmin.from('children')
     .insert({ user_id: req.userId, name, age }).select().single();
   if (error) return res.status(400).json({ error: error.message });
-
-  // auto-create child_expenses row
+  // Auto-create child_expenses row
   await supabaseAdmin.from('child_expenses')
     .insert({ child_id: data.id, user_id: req.userId, education: 0, allowance: 0, holiday: 0, medical: 0 });
-
   res.status(201).json(data);
 });
 
-router.put('/children/:id', [
-  param('id').isUUID(),
-  body('name').optional().trim().isLength({ min: 1, max: 60 }).escape(),
-  body('age').optional().isInt({ min: 0, max: 25 }),
-], async (req, res) => {
+router.put('/children/:id', [param('id').isUUID()], async (req, res) => {
   if (!validate(req, res)) return;
-  const allowed = ['name','age'];
-  const updates = Object.fromEntries(Object.entries(req.body).filter(([k]) => allowed.includes(k)));
+  const updates = Object.fromEntries(
+    Object.entries(req.body).filter(([k]) => ['name','age'].includes(k))
+  );
   updates.updated_at = new Date().toISOString();
   const { data, error } = await supabaseAdmin.from('children')
-    .update(updates).eq('id', req.params.id).eq('user_id', req.userId)
-    .select().single();
+    .update(updates).eq('id', req.params.id).eq('user_id', req.userId).select().single();
   if (error) return res.status(400).json({ error: error.message });
   if (!data) return res.status(404).json({ error: 'Not found' });
   res.json(data);
 });
 
-router.put('/children/:id/expenses', [
-  param('id').isUUID(),
-  body('education').optional().isFloat({ min: 0 }),
-  body('allowance').optional().isFloat({ min: 0 }),
-  body('holiday').optional().isFloat({ min: 0 }),
-  body('medical').optional().isFloat({ min: 0 }),
-], async (req, res) => {
+router.put('/children/:id/expenses', [param('id').isUUID()], async (req, res) => {
   if (!validate(req, res)) return;
-  const allowed = ['education','allowance','holiday','medical'];
-  const updates = Object.fromEntries(Object.entries(req.body).filter(([k]) => allowed.includes(k)));
+  const updates = Object.fromEntries(
+    Object.entries(req.body).filter(([k]) => ['education','allowance','holiday','medical'].includes(k))
+  );
   updates.updated_at = new Date().toISOString();
   const { data, error } = await supabaseAdmin.from('child_expenses')
-    .update(updates).eq('child_id', req.params.id).eq('user_id', req.userId)
-    .select().single();
+    .update(updates).eq('child_id', req.params.id).eq('user_id', req.userId).select().single();
   if (error) return res.status(400).json({ error: error.message });
-  res.json(data);
+  res.json(data || {});
 });
 
 router.delete('/children/:id', [param('id').isUUID()], async (req, res) => {
   if (!validate(req, res)) return;
-  const { error } = await supabaseAdmin.from('children')
-    .delete().eq('id', req.params.id).eq('user_id', req.userId);
-  if (error) return res.status(400).json({ error: error.message });
+  await supabaseAdmin.from('children').delete().eq('id', req.params.id).eq('user_id', req.userId);
   res.json({ message: 'Deleted' });
 });
 
-// ============================================================
-// LIABILITIES
-// ============================================================
-
+// ── LIABILITIES ───────────────────────────────────────────────────────
 router.post('/liabilities', [
-  body('label').trim().isLength({ min: 1, max: 100 }).escape(),
+  body('label').trim().isLength({ min: 1, max: 100 }),
   body('loan_type').isIn(['home','vehicle','personal','education','other']),
   body('outstanding_amount').optional().isFloat({ min: 0 }),
   body('emi').optional().isFloat({ min: 0 }),
@@ -276,7 +249,7 @@ router.post('/liabilities', [
   if (!validate(req, res)) return;
   const { label, loan_type, outstanding_amount, emi, interest_rate, remaining_months, is_credit_card } = req.body;
   const { data, error } = await supabaseAdmin.from('liabilities')
-    .insert({ user_id: req.userId, label, loan_type, outstanding_amount, emi, interest_rate, remaining_months, is_credit_card: is_credit_card || false })
+    .insert({ user_id: req.userId, label, loan_type, outstanding_amount, emi, interest_rate, remaining_months, is_credit_card: !!is_credit_card })
     .select().single();
   if (error) return res.status(400).json({ error: error.message });
   res.status(201).json(data);
@@ -284,12 +257,12 @@ router.post('/liabilities', [
 
 router.put('/liabilities/:id', [param('id').isUUID()], async (req, res) => {
   if (!validate(req, res)) return;
-  const allowed = ['label','loan_type','outstanding_amount','emi','interest_rate','remaining_months','is_credit_card'];
-  const updates = Object.fromEntries(Object.entries(req.body).filter(([k]) => allowed.includes(k)));
+  const updates = Object.fromEntries(
+    Object.entries(req.body).filter(([k]) => ['label','loan_type','outstanding_amount','emi','interest_rate','remaining_months','is_credit_card'].includes(k))
+  );
   updates.updated_at = new Date().toISOString();
   const { data, error } = await supabaseAdmin.from('liabilities')
-    .update(updates).eq('id', req.params.id).eq('user_id', req.userId)
-    .select().single();
+    .update(updates).eq('id', req.params.id).eq('user_id', req.userId).select().single();
   if (error) return res.status(400).json({ error: error.message });
   if (!data) return res.status(404).json({ error: 'Not found' });
   res.json(data);
@@ -297,20 +270,15 @@ router.put('/liabilities/:id', [param('id').isUUID()], async (req, res) => {
 
 router.delete('/liabilities/:id', [param('id').isUUID()], async (req, res) => {
   if (!validate(req, res)) return;
-  const { error } = await supabaseAdmin.from('liabilities')
-    .delete().eq('id', req.params.id).eq('user_id', req.userId);
-  if (error) return res.status(400).json({ error: error.message });
+  await supabaseAdmin.from('liabilities').delete().eq('id', req.params.id).eq('user_id', req.userId);
   res.json({ message: 'Deleted' });
 });
 
-// ============================================================
-// INVESTMENTS
-// ============================================================
-
+// ── INVESTMENTS ───────────────────────────────────────────────────────
 router.post('/investments', [
   body('investment_type').isIn(['mf','stocks','fd','ppf','nps','real_estate','gold','bank','bonds','insurance_cv','other']),
   body('asset_class').optional().isIn(['financial','physical']),
-  body('label').trim().isLength({ min: 1, max: 100 }).escape(),
+  body('label').trim().isLength({ min: 1, max: 100 }),
   body('current_value').optional().isFloat({ min: 0 }),
   body('monthly_contribution').optional().isFloat({ min: 0 }),
 ], async (req, res) => {
@@ -319,18 +287,21 @@ router.post('/investments', [
   const { data, error } = await supabaseAdmin.from('investments')
     .insert({ user_id: req.userId, investment_type, label, current_value, monthly_contribution, asset_class: asset_class || 'financial' })
     .select().single();
-  if (error) return res.status(400).json({ error: error.message });
+  if (error) {
+    console.error('POST /investments error:', error);
+    return res.status(400).json({ error: error.message });
+  }
   res.status(201).json(data);
 });
 
 router.put('/investments/:id', [param('id').isUUID()], async (req, res) => {
   if (!validate(req, res)) return;
-  const allowed = ['investment_type','label','current_value','monthly_contribution','asset_class'];
-  const updates = Object.fromEntries(Object.entries(req.body).filter(([k]) => allowed.includes(k)));
+  const updates = Object.fromEntries(
+    Object.entries(req.body).filter(([k]) => ['investment_type','label','current_value','monthly_contribution','asset_class'].includes(k))
+  );
   updates.updated_at = new Date().toISOString();
   const { data, error } = await supabaseAdmin.from('investments')
-    .update(updates).eq('id', req.params.id).eq('user_id', req.userId)
-    .select().single();
+    .update(updates).eq('id', req.params.id).eq('user_id', req.userId).select().single();
   if (error) return res.status(400).json({ error: error.message });
   if (!data) return res.status(404).json({ error: 'Not found' });
   res.json(data);
@@ -338,39 +309,33 @@ router.put('/investments/:id', [param('id').isUUID()], async (req, res) => {
 
 router.delete('/investments/:id', [param('id').isUUID()], async (req, res) => {
   if (!validate(req, res)) return;
-  const { error } = await supabaseAdmin.from('investments')
-    .delete().eq('id', req.params.id).eq('user_id', req.userId);
-  if (error) return res.status(400).json({ error: error.message });
+  await supabaseAdmin.from('investments').delete().eq('id', req.params.id).eq('user_id', req.userId);
   res.json({ message: 'Deleted' });
 });
 
-// ============================================================
-// INSURANCE
-// ============================================================
-
+// ── INSURANCE ─────────────────────────────────────────────────────────
 router.post('/insurance', [
   body('policy_type').isIn(['life','health','vehicle','term','other']),
-  body('provider').optional().trim().isLength({ max: 100 }).escape(),
+  body('provider').optional().trim().isLength({ max: 100 }),
   body('cover_amount').optional().isFloat({ min: 0 }),
   body('premium').optional().isFloat({ min: 0 }),
 ], async (req, res) => {
   if (!validate(req, res)) return;
   const { policy_type, provider, cover_amount, premium } = req.body;
   const { data, error } = await supabaseAdmin.from('insurance_policies')
-    .insert({ user_id: req.userId, policy_type, provider, cover_amount, premium })
-    .select().single();
+    .insert({ user_id: req.userId, policy_type, provider, cover_amount, premium }).select().single();
   if (error) return res.status(400).json({ error: error.message });
   res.status(201).json(data);
 });
 
 router.put('/insurance/:id', [param('id').isUUID()], async (req, res) => {
   if (!validate(req, res)) return;
-  const allowed = ['policy_type','provider','cover_amount','premium'];
-  const updates = Object.fromEntries(Object.entries(req.body).filter(([k]) => allowed.includes(k)));
+  const updates = Object.fromEntries(
+    Object.entries(req.body).filter(([k]) => ['policy_type','provider','cover_amount','premium'].includes(k))
+  );
   updates.updated_at = new Date().toISOString();
   const { data, error } = await supabaseAdmin.from('insurance_policies')
-    .update(updates).eq('id', req.params.id).eq('user_id', req.userId)
-    .select().single();
+    .update(updates).eq('id', req.params.id).eq('user_id', req.userId).select().single();
   if (error) return res.status(400).json({ error: error.message });
   if (!data) return res.status(404).json({ error: 'Not found' });
   res.json(data);
@@ -378,18 +343,13 @@ router.put('/insurance/:id', [param('id').isUUID()], async (req, res) => {
 
 router.delete('/insurance/:id', [param('id').isUUID()], async (req, res) => {
   if (!validate(req, res)) return;
-  const { error } = await supabaseAdmin.from('insurance_policies')
-    .delete().eq('id', req.params.id).eq('user_id', req.userId);
-  if (error) return res.status(400).json({ error: error.message });
+  await supabaseAdmin.from('insurance_policies').delete().eq('id', req.params.id).eq('user_id', req.userId);
   res.json({ message: 'Deleted' });
 });
 
-// ============================================================
-// FINANCIAL GOALS
-// ============================================================
-
+// ── FINANCIAL GOALS ────────────────────────────────────────────────────
 router.post('/goals', [
-  body('goal_name').trim().isLength({ min: 1, max: 100 }).escape(),
+  body('goal_name').trim().isLength({ min: 1, max: 100 }),
   body('target_amount').optional().isFloat({ min: 0 }),
   body('target_year').optional().isInt({ min: 2024, max: 2100 }),
   body('priority').optional().isIn(['high','medium','low']),
@@ -397,88 +357,36 @@ router.post('/goals', [
   if (!validate(req, res)) return;
   const { goal_name, target_amount, target_year, priority } = req.body;
   const { data, error } = await supabaseAdmin.from('financial_goals')
-    .insert({ user_id: req.userId, goal_name, target_amount, target_year, priority })
-    .select().single();
+    .insert({ user_id: req.userId, goal_name, target_amount, target_year, priority }).select().single();
   if (error) return res.status(400).json({ error: error.message });
   res.status(201).json(data);
-});
-
-router.put('/goals/:id', [param('id').isUUID()], async (req, res) => {
-  if (!validate(req, res)) return;
-  const allowed = ['goal_name','target_amount','target_year','priority'];
-  const updates = Object.fromEntries(Object.entries(req.body).filter(([k]) => allowed.includes(k)));
-  updates.updated_at = new Date().toISOString();
-  const { data, error } = await supabaseAdmin.from('financial_goals')
-    .update(updates).eq('id', req.params.id).eq('user_id', req.userId)
-    .select().single();
-  if (error) return res.status(400).json({ error: error.message });
-  if (!data) return res.status(404).json({ error: 'Not found' });
-  res.json(data);
 });
 
 router.delete('/goals/:id', [param('id').isUUID()], async (req, res) => {
   if (!validate(req, res)) return;
-  const { error } = await supabaseAdmin.from('financial_goals')
-    .delete().eq('id', req.params.id).eq('user_id', req.userId);
-  if (error) return res.status(400).json({ error: error.message });
+  await supabaseAdmin.from('financial_goals').delete().eq('id', req.params.id).eq('user_id', req.userId);
   res.json({ message: 'Deleted' });
 });
 
-// ============================================================
-// CONSENT (DPDP)
-// ============================================================
-
+// ── CONSENT ────────────────────────────────────────────────────────────
 router.post('/consent', [
   body('terms_version').notEmpty(),
   body('privacy_version').notEmpty(),
-  body('terms_accepted').isBoolean().equals('true'),
-  body('privacy_accepted').isBoolean().equals('true'),
 ], async (req, res) => {
   if (!validate(req, res)) return;
   const { terms_version, privacy_version } = req.body;
-  const ip = req.ip;
-  const ua = req.headers['user-agent'];
   const { data, error } = await supabaseAdmin.from('consent_acceptances')
-    .insert({ user_id: req.userId, terms_version, privacy_version, ip_address: ip, user_agent: ua })
+    .insert({ user_id: req.userId, terms_version, privacy_version, ip_address: req.ip, user_agent: req.headers['user-agent'] })
     .select().single();
   if (error) return res.status(400).json({ error: error.message });
   res.status(201).json(data);
 });
 
-// ============================================================
-// ACCOUNT DELETION (DPDP right to erasure)
-// ============================================================
-
+// ── ACCOUNT DELETION (DPDP) ────────────────────────────────────────────
 router.delete('/me', auditLog({ action: 'account.delete', entityType: 'user_profiles' }), async (req, res) => {
-  const uid = req.userId;
-  // Supabase cascade deletes handle all child tables via FK on delete cascade
-  const { error } = await supabaseAdmin.auth.admin.deleteUser(uid);
+  const { error } = await supabaseAdmin.auth.admin.deleteUser(req.userId);
   if (error) return res.status(500).json({ error: 'Failed to delete account' });
   res.json({ message: 'Account and all data deleted' });
-});
-
-// ============================================================
-// SENSITIVE FIELD CHANGE REQUESTS (name)
-// ============================================================
-
-router.post('/change-request', [
-  body('field_name').isIn(['display_name','phone']),
-  body('requested_value').trim().isLength({ min: 1, max: 100 }).escape(),
-], async (req, res) => {
-  if (!validate(req, res)) return;
-  const { field_name, requested_value } = req.body;
-
-  // Get old value
-  const { data: profile } = await supabaseAdmin
-    .from('user_profiles').select('display_name, phone').eq('id', req.userId).single();
-
-  const old_value = profile?.[field_name] || '';
-
-  const { data, error } = await supabaseAdmin.from('profile_change_requests')
-    .insert({ user_id: req.userId, field_name, old_value, requested_value })
-    .select().single();
-  if (error) return res.status(400).json({ error: error.message });
-  res.status(201).json({ message: 'Change request submitted', data });
 });
 
 module.exports = router;

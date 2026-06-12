@@ -28,7 +28,7 @@ export default function AdminDashboard() {
       const res = await apiFetch('/api/admin/bookings');
       if (res.status === 403) { navigate('/'); return; }
       const data = await res.json();
-      setBookings(data);
+      setBookings(Array.isArray(data) ? data : []);
     } finally { setLoading(false); }
   }
 
@@ -38,7 +38,7 @@ export default function AdminDashboard() {
       const res = await apiFetch('/api/admin/users');
       if (res.status === 403) { navigate('/'); return; }
       const data = await res.json();
-      setUsers(data);
+      setUsers(Array.isArray(data) ? data : []);
     } finally { setLoading(false); }
   }
 
@@ -160,77 +160,207 @@ export default function AdminDashboard() {
 }
 
 function UserProfileView({ data }) {
-  const income = data.income || [];
-  const expenses = data.expenses || [];
-  const goals = data.goals || [];
-  const liabilities = data.liabilities || [];
-  const investments = data.investments || [];
+  const user       = data.user || {};
+  const profile    = data.profile || {};
+  const income     = data.income || [];
+  const expenses   = data.expenses || [];
+  const children   = data.children || [];
+  const childExp   = data.child_expenses || [];
+  const liabilities  = data.liabilities || [];
+  const investments  = data.investments || [];
+  const insurance    = data.insurance || [];
+  const goals        = data.goals || [];
 
-  const totalIncome = income.reduce((s, r) => s + Number(r.amount), 0);
-  const totalExpenses = expenses.reduce((s, r) => s + Number(r.amount), 0);
+  const totalIncome   = income.reduce((s, r) => s + Number(r.amount || 0), 0);
+  const totalExpenses = expenses.reduce((s, r) => s + Number(r.amount || 0), 0);
+  const financialAssets = investments.filter(i => !i.asset_class || i.asset_class === 'financial');
+  const physicalAssets  = investments.filter(i => i.asset_class === 'physical');
+  const totalLiab       = liabilities.reduce((s, l) => s + Number(l.outstanding_amount || 0), 0);
+  const totalFinancial  = financialAssets.reduce((s, i) => s + Number(i.current_value || 0), 0);
+  const totalPhysical   = physicalAssets.reduce((s, i) => s + Number(i.current_value || 0), 0);
+  const netWorth        = totalFinancial + totalPhysical - totalLiab;
+
+  function inr(n) {
+    return '₹' + Number(n || 0).toLocaleString('en-IN');
+  }
+
+  function Section({ title, children: c }) {
+    return (
+      <div>
+        <h4 className="font-semibold text-[#22568f] text-sm uppercase tracking-wide mb-2 pb-1 border-b border-[#e2ebf5]">
+          {title}
+        </h4>
+        {c}
+      </div>
+    );
+  }
+
+  function Row({ label, value, sub }) {
+    return (
+      <div className="flex justify-between items-start text-sm py-1.5 border-b border-gray-50">
+        <span className="text-gray-600">{label}{sub && <span className="text-xs text-gray-400 ml-1">{sub}</span>}</span>
+        <span className="font-medium text-gray-800 text-right">{value || '—'}</span>
+      </div>
+    );
+  }
+
+  const riskLabel = { conservative: 'Conservative', moderate: 'Moderate', aggressive: 'Aggressive' };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-6">
-      <div>
-        <h3 className="font-semibold text-lg mb-3">Profile Summary</h3>
-        <div className="grid grid-cols-3 gap-4">
-          {[
-            { label: 'Monthly Income', value: `₹${totalIncome.toLocaleString('en-IN')}`, color: 'text-green-600' },
-            { label: 'Monthly Expenses', value: `₹${totalExpenses.toLocaleString('en-IN')}`, color: 'text-red-500' },
-            { label: 'Investment Capacity', value: `₹${Math.max(0, totalIncome - totalExpenses).toLocaleString('en-IN')}`, color: 'text-[#22568f]' },
-          ].map(card => (
-            <div key={card.label} className="bg-gray-50 rounded-lg p-4">
-              <p className="text-xs text-gray-500">{card.label}</p>
-              <p className={`text-xl font-bold ${card.color}`}>{card.value}</p>
-            </div>
-          ))}
-        </div>
+    <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-6 overflow-y-auto max-h-[80vh]">
+
+      {/* Summary cards */}
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { label: 'Monthly Income',      value: inr(totalIncome),                         color: 'text-green-600' },
+          { label: 'Monthly Expenses',    value: inr(totalExpenses),                       color: 'text-red-500' },
+          { label: 'Investment Capacity', value: inr(Math.max(0, totalIncome - totalExpenses)), color: 'text-[#22568f]' },
+        ].map(card => (
+          <div key={card.label} className="bg-gray-50 rounded-lg p-3">
+            <p className="text-xs text-gray-500">{card.label}</p>
+            <p className={`text-lg font-bold ${card.color}`}>{card.value}</p>
+          </div>
+        ))}
       </div>
 
+      {/* Personal Details */}
+      <Section title="Personal Details">
+        <Row label="Name"           value={user.display_name} />
+        <Row label="Email"          value={user.email} />
+        <Row label="Phone"          value={user.phone} />
+        <Row label="Age"            value={profile.age ? `${profile.age} years` : null} />
+        <Row label="Risk Preference" value={riskLabel[profile.risk_preference]} />
+        <Row label="Date of Plan"   value={profile.date_of_plan
+          ? new Date(profile.date_of_plan).toLocaleDateString('en-IN') : null} />
+      </Section>
+
+      {/* Income */}
       {income.length > 0 && (
-        <div>
-          <h4 className="font-medium text-gray-700 mb-2">Income Sources</h4>
-          {income.map(r => (
-            <div key={r.id} className="flex justify-between text-sm py-1 border-b border-gray-100">
-              <span>{r.label}</span><span className="font-medium">₹{Number(r.amount).toLocaleString('en-IN')}/mo</span>
-            </div>
-          ))}
-        </div>
+        <Section title="Monthly Income">
+          {income.map(r => <Row key={r.id} label={r.label} value={`${inr(r.amount)}/mo`} />)}
+          <Row label="Total" value={`${inr(totalIncome)}/mo`} />
+        </Section>
       )}
 
-      {goals.length > 0 && (
-        <div>
-          <h4 className="font-medium text-gray-700 mb-2">Financial Goals</h4>
-          {goals.map(r => (
-            <div key={r.id} className="flex justify-between text-sm py-1 border-b border-gray-100">
-              <span>{r.goal_name}</span>
-              <span className="font-medium">₹{Number(r.target_amount).toLocaleString('en-IN')} by {r.target_year}</span>
-            </div>
-          ))}
-        </div>
+      {/* Expenses */}
+      {expenses.length > 0 && (
+        <Section title="Monthly Expenses">
+          {expenses.map(r => <Row key={r.id} label={r.label} value={`${inr(r.amount)}/mo`} />)}
+          <Row label="Total" value={`${inr(totalExpenses)}/mo`} />
+        </Section>
       )}
 
+      {/* Children */}
+      {children.length > 0 && (
+        <Section title="Children">
+          {children.map(child => {
+            const exp = childExp.find(e => e.child_id === child.id) || {};
+            const childTotal = Number(exp.education||0) + Number(exp.allowance||0) + Number(exp.holiday||0) + Number(exp.medical||0);
+            return (
+              <div key={child.id} className="mb-3">
+                <p className="text-sm font-medium text-gray-700 mb-1">{child.name} (Age {child.age})</p>
+                <Row label="Education"  value={inr(exp.education)} />
+                <Row label="Allowance"  value={inr(exp.allowance)} />
+                <Row label="Holiday"    value={inr(exp.holiday)} />
+                <Row label="Medical"    value={inr(exp.medical)} />
+                <Row label="Total/mo"   value={inr(childTotal)} />
+              </div>
+            );
+          })}
+        </Section>
+      )}
+
+      {/* Financial Assets */}
+      {financialAssets.length > 0 && (
+        <Section title="Financial Assets">
+          {financialAssets.map(r => <Row key={r.id} label={r.label} value={inr(r.current_value)} />)}
+          <Row label="Total" value={inr(totalFinancial)} />
+        </Section>
+      )}
+
+      {/* Physical Assets */}
+      {physicalAssets.length > 0 && (
+        <Section title="Physical Assets">
+          {physicalAssets.map(r => <Row key={r.id} label={r.label} value={inr(r.current_value)} />)}
+          <Row label="Total" value={inr(totalPhysical)} />
+        </Section>
+      )}
+
+      {/* Liabilities */}
       {liabilities.length > 0 && (
-        <div>
-          <h4 className="font-medium text-gray-700 mb-2">Liabilities</h4>
+        <Section title="Liabilities">
           {liabilities.map(r => (
-            <div key={r.id} className="flex justify-between text-sm py-1 border-b border-gray-100">
-              <span>{r.label}</span><span className="font-medium">EMI ₹{Number(r.emi).toLocaleString('en-IN')}/mo</span>
-            </div>
+            <Row key={r.id} label={r.label}
+              value={`EMI ${inr(r.emi)}/mo | Outstanding ${inr(r.outstanding_amount)}`} />
           ))}
-        </div>
+          <Row label="Total Outstanding" value={inr(totalLiab)} />
+        </Section>
       )}
 
-      {investments.length > 0 && (
-        <div>
-          <h4 className="font-medium text-gray-700 mb-2">Existing Investments</h4>
-          {investments.map(r => (
-            <div key={r.id} className="flex justify-between text-sm py-1 border-b border-gray-100">
-              <span>{r.label}</span><span className="font-medium">₹{Number(r.current_value).toLocaleString('en-IN')}</span>
-            </div>
-          ))}
-        </div>
+      {/* Net Worth */}
+      {(investments.length > 0 || liabilities.length > 0) && (
+        <Section title="Net Worth">
+          <Row label="Total Assets"      value={inr(totalFinancial + totalPhysical)} />
+          <Row label="Total Liabilities" value={inr(totalLiab)} />
+          <Row label="Net Worth"
+            value={<span className={netWorth >= 0 ? 'text-green-600 font-bold' : 'text-red-600 font-bold'}>
+              {inr(netWorth)}
+            </span>} />
+        </Section>
       )}
+
+      {/* Insurance */}
+      {insurance.length > 0 && (
+        <Section title="Insurance Policies">
+          {insurance.map(r => (
+            <Row key={r.id} label={`${r.policy_type.charAt(0).toUpperCase() + r.policy_type.slice(1)} — ${r.provider || 'N/A'}`}
+              value={`Cover ${inr(r.cover_amount)} | Premium ${inr(r.premium)}/yr`} />
+          ))}
+        </Section>
+      )}
+
+      {/* Calculator Inputs */}
+      {profile.sip_amount > 0 && (
+        <Section title="Investment Planning Inputs">
+          <Row label="SIP Amount"       value={`${inr(profile.sip_amount)}/mo`} />
+          <Row label="SIP Growth Rate"  value={`${((profile.sip_growth_rate || 0.12) * 100).toFixed(0)}% p.a.`} />
+          <Row label="SIP Start Age"    value={profile.sip_start_age} />
+          {profile.one_time_invest > 0 && <Row label="One-Time Investment" value={inr(profile.one_time_invest)} />}
+          {profile.swp_corpus > 0 && <>
+            <Row label="SWP Corpus"     value={inr(profile.swp_corpus)} />
+            <Row label="SWP Withdrawal" value={`${inr(profile.swp_withdrawal)}/mo`} />
+          </>}
+        </Section>
+      )}
+
+      {profile.home_loan_amount > 0 && (
+        <Section title="Home Loan">
+          <Row label="Loan Amount"    value={inr(profile.home_loan_amount)} />
+          <Row label="EMI"            value={`${inr(profile.home_loan_emi)}/mo`} />
+          <Row label="Tenure"         value={`${profile.home_loan_tenure} years`} />
+          <Row label="Interest Rate"  value={`${((profile.home_loan_rate || 0.071) * 100).toFixed(2)}% p.a.`} />
+        </Section>
+      )}
+
+      {profile.term_insurance_premium > 0 && (
+        <Section title="Term Insurance">
+          <Row label="Annual Premium"  value={inr(profile.term_insurance_premium)} />
+          <Row label="SIP to Offset"   value={`${inr(profile.term_insurance_sip)}/mo`} />
+          <Row label="Tenure"          value={`${profile.term_insurance_tenure} years`} />
+        </Section>
+      )}
+
+      {/* Goals */}
+      {goals.length > 0 && (
+        <Section title="Financial Goals">
+          {goals.map(r => (
+            <Row key={r.id} label={r.goal_name}
+              value={`${inr(r.target_amount)} by ${r.target_year}`}
+              sub={r.priority ? `(${r.priority})` : ''} />
+          ))}
+        </Section>
+      )}
+
     </div>
   );
 }

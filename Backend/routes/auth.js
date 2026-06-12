@@ -8,33 +8,15 @@ const router = express.Router();
 
 // POST /api/auth/register
 router.post('/register', authLimiter, [
-  body('email').isEmail().normalizeEmail(),
+  body('email').isEmail().normalizeEmail({ gmail_remove_dots: false }),
   body('password').isLength({ min: 8 }).matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/),
   body('display_name').trim().isLength({ min: 2, max: 60 }).escape()
 ], async (req, res) => {
-//   const errors = validationResult(req);
-//   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
-
-//   const { email, password, display_name } = req.body;
-
-//   const { data, error } = await supabase.auth.signUp({
-//     email,
-//     password,
-//     options: {
-//       data: { display_name },
-//       emailRedirectTo: `${process.env.CORS_ORIGIN}/auth/verify`
-//     }
-//   });
-
-//   if (error) return res.status(400).json({ error: error.message });
-
   const errors = validationResult(req);
   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
-  // 1. Destructure body parameters immediately
   const { email, password, display_name } = req.body;
 
-  // 2. Wrap the Supabase response object safely
   const signUpResult = await supabase.auth.signUp({
     email,
     password,
@@ -44,15 +26,11 @@ router.post('/register', authLimiter, [
     }
   });
 
-  // 3. Handle the error cleanly using the new reference
   if (signUpResult.error) {
     return res.status(400).json({ error: signUpResult.error.message });
   }
 
   const data = signUpResult.data;
-
-
-
 
   res.status(201).json({
     message: 'Registration successful. Please verify your email.',
@@ -62,7 +40,7 @@ router.post('/register', authLimiter, [
 
 // POST /api/auth/login
 router.post('/login', authLimiter, [
-  body('email').isEmail().normalizeEmail(),
+  body('email').isEmail().normalizeEmail({ gmail_remove_dots: false }),
   body('password').notEmpty()
 ], async (req, res) => {
   const errors = validationResult(req);
@@ -72,7 +50,7 @@ router.post('/login', authLimiter, [
 
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-  if (error) return res.status(401).json({ error: 'Invalid credentials' }); // don't reveal which field
+  if (error) return res.status(401).json({ error: 'Invalid credentials' });
 
   res.json({
     access_token: data.session.access_token,
@@ -90,17 +68,17 @@ router.post('/logout', requireAuth, async (req, res) => {
 
 // POST /api/auth/forgot-password
 router.post('/forgot-password', authLimiter, [
-  body('email').isEmail().normalizeEmail()
+  body('email').isEmail().normalizeEmail({ gmail_remove_dots: false })
 ], async (req, res) => {
   const { email } = req.body;
-  // Always return success — never reveal if email exists (prevents enumeration)
   await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${process.env.CORS_ORIGIN}/auth/reset-password`
   });
+  // Always return success — never reveal if email exists (prevents enumeration)
   res.json({ message: 'If that email exists, a reset link has been sent.' });
 });
 
-// POST /api/auth/reset-password (called after user clicks email link, with new password)
+// POST /api/auth/reset-password
 router.post('/reset-password', requireAuth, [
   body('new_password').isLength({ min: 8 }).matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
 ], async (req, res) => {
@@ -108,7 +86,6 @@ router.post('/reset-password', requireAuth, [
   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
   const { new_password } = req.body;
-  const token = req.headers.authorization.split(' ')[1];
 
   const { error } = await supabase.auth.updateUser({ password: new_password });
   if (error) return res.status(400).json({ error: error.message });
