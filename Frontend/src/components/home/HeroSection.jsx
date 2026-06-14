@@ -1077,8 +1077,48 @@ export default function HeroSection() {
             </motion.div>
           </div>
 
-          {/* ── RIGHT: Phone assembly animation ─────────────────────────── */}
-          <div className="hidden lg:flex items-center justify-center">
+          {/* ── RIGHT: Store badges + Phone assembly animation ───────────── */}
+          <div className="hidden lg:flex flex-col items-center gap-5">
+            {/* App Store / Play Store badges — above the phone */}
+            <motion.div
+              className="flex items-center gap-3"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.0, duration: 0.5 }}
+            >
+              <a
+                href="https://play.google.com/store/apps/details?id=com.iw.radds&pcampaignid=web_share"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 bg-white/8 hover:bg-white/15 border border-white/15 hover:border-white/30 rounded-xl px-3 py-2.5 transition-all duration-200 hover:-translate-y-0.5"
+              >
+                <svg viewBox="0 0 24 24" className="w-6 h-6 flex-shrink-0" fill="none">
+                  <path d="M3.18 23.76a2 2 0 0 0 2.05-.22l12.04-6.95-2.76-2.76-11.33 9.93z" fill="#EA4335"/>
+                  <path d="M21.6 10.27a1.94 1.94 0 0 0 0 3.46l.05.03-3.3-1.9.03-.03 3.22-1.56z" fill="#FBBC04"/>
+                  <path d="M3.18.24C2.5.6 2 1.34 2 2.27v19.46c0 .93.5 1.67 1.18 2.03l12.31-11.76L3.18.24z" fill="#4285F4"/>
+                  <path d="M17.27 7.59L5.23.64a2 2 0 0 0-2.05-.4L14.51 12l2.76-4.41z" fill="#34A853"/>
+                </svg>
+                <div>
+                  <p className="text-white/50 text-[10px] leading-none mb-0.5">Get it on</p>
+                  <p className="text-white font-semibold text-sm leading-none">Google Play</p>
+                </div>
+              </a>
+              <a
+                href="https://apps.apple.com/in/app/radds-capital/id6744892358"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 bg-white/8 hover:bg-white/15 border border-white/15 hover:border-white/30 rounded-xl px-3 py-2.5 transition-all duration-200 hover:-translate-y-0.5"
+              >
+                <svg viewBox="0 0 24 24" className="w-6 h-6 flex-shrink-0" fill="white">
+                  <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                </svg>
+                <div>
+                  <p className="text-white/50 text-[10px] leading-none mb-0.5">Download on the</p>
+                  <p className="text-white font-semibold text-sm leading-none">App Store</p>
+                </div>
+              </a>
+            </motion.div>
+
             <PhoneWithSatellites loopKey={loopKey} />
           </div>
 

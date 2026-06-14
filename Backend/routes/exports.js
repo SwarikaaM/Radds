@@ -7,6 +7,7 @@ const { auditLog } = require('../middleware/audit');
 const ExcelJS = require('exceljs');
 const PDFDocument = require('pdfkit');
 const CALCULATORS = require('../calculators');
+const path = require('path');
 
 const router = express.Router();
 router.use(requireAuth, exportLimiter);
@@ -43,6 +44,9 @@ async function getFullProfile(userId) {
 
 function inr(n) {
   return '₹' + Number(n || 0).toLocaleString('en-IN');
+}
+function inrPdf(n) {
+  return 'Rs. ' + Number(n || 0).toLocaleString('en-IN');
 }
 function numFmt(cell) {
   cell.numFmt = '#,##0';
@@ -534,9 +538,11 @@ router.post('/xlsx', [
       `attachment; filename=radds_${userName.replace(/\s+/g,'_')}_${Date.now()}.xlsx`);
     await wb.xlsx.write(res);
 
-    await supabaseAdmin.from('export_reports').insert({
-      user_id: req.userId, export_type: 'xlsx', calculator_type: null,
-    }).then(() => {}).catch?.(() => {}) || Promise.resolve();
+    await Promise.resolve(
+      supabaseAdmin.from('export_reports').insert({
+        user_id: req.userId, export_type: 'xlsx', calculator_type: null,
+      })
+    ).catch(() => {});
 
     res.end();
   } catch (err) {
@@ -546,120 +552,507 @@ router.post('/xlsx', [
 });
 
 // ============================================================
-// POST /api/exports/pdf
+// POST /api/exports/pdf  — 5-page financial report with logo
 // ============================================================
 router.post('/pdf', async (req, res) => {
   try {
     const { calculator_type, inputs } = req.body || {};
     const data = await getFullProfile(req.userId);
+    const p    = data.profile || {};
 
-    let calcResult = null;
-    if (calculator_type && inputs) {
-      const fn = CALCULATORS[calculator_type];
-      if (fn) calcResult = fn(inputs);
-    }
+    const userName  = data.user?.display_name || 'Client';
+    const userEmail = data.user?.email || '';
+    const userPhone = data.user?.phone || '';
+    const planDate  = p.date_of_plan
+      ? new Date(p.date_of_plan).toLocaleDateString('en-IN')
+      : new Date().toLocaleDateString('en-IN');
 
-    const doc = new PDFDocument({ margin: 50, size: 'A4' });
+    const LOGO_PATH = path.join(__dirname, '../assets/Logo.png');
+    const PAGE_W    = 595;
+    const PAGE_H    = 842;
+    const MARGIN    = 44;
+    const CONTENT_W = PAGE_W - MARGIN * 2;
+    const BLUE      = '#22568F';
+    const LIGHT_BG  = '#EAF2FF';
+    const GREY      = '#6B7E99';
+    const RED       = '#cc0000';
+    const GREEN     = '#1a7f3c';
+
+    const doc = new PDFDocument({
+      margin: MARGIN,
+      size: 'A4',
+      bufferPages: true,
+      autoFirstPage: false,
+    });
 
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename=radds_report_${Date.now()}.pdf`);
+    res.setHeader('Content-Disposition',
+      `attachment; filename=radds_${userName.replace(/\s+/g, '_')}_report_${Date.now()}.pdf`);
     doc.pipe(res);
 
-    // ── Header bar ──────────────────────────────────────────────
-    doc.rect(0, 0, 595, 60).fill('#22568f');
-    doc.fillColor('white').fontSize(16).font('Helvetica-Bold').text('Radds Capital', 50, 15);
-    doc.fontSize(9).font('Helvetica').text('AMFI-Registered Mutual Fund Distributor | ARN-XXXXXX', 50, 35);
-    doc.fontSize(9).text(`Generated: ${new Date().toLocaleString('en-IN')}`, 400, 35, { align: 'right' });
-    doc.fillColor('#1a1a2e').moveDown(3);
+    // ── Helpers ────────────────────────────────────────────────────────
 
-    // ── Title ────────────────────────────────────────────────────
-    doc.fontSize(18).font('Helvetica-Bold').fillColor('#22568f').text('Financial Profile Report', 50, 80);
-    doc.fontSize(11).font('Helvetica').fillColor('#555')
-      .text(`${data.user?.display_name || ''} | ${data.user?.email || ''}`, 50, 106);
-    doc.moveDown(1.5);
-
-    function sectionHeader(title) {
-      doc.fontSize(12).font('Helvetica-Bold').fillColor('#22568f').text(title);
-      doc.moveTo(50, doc.y).lineTo(545, doc.y).strokeColor('#e2ebf5').lineWidth(1).stroke();
-      doc.moveDown(0.4);
-    }
-    function kv(label, value) {
-      doc.fontSize(10).font('Helvetica').fillColor('#333')
-        .text(label, 50, doc.y, { continued: true, width: 260 })
-        .font('Helvetica-Bold').text(String(value || '-'), { align: 'right', width: 235 });
-      doc.moveDown(0.25);
+    function addPage() {
+      doc.addPage();
+      drawPageHeader();
     }
 
-    const p = data.profile || {};
-    sectionHeader('Personal Details');
-    kv('Name', data.user?.display_name || '-');
-    kv('Age', p.age ? `${p.age} years` : '-');
-    kv('Risk Preference', p.risk_preference || '-');
-    doc.moveDown(0.5);
-
-    const totalIncome = data.income.reduce((s, r) => s + Number(r.amount || 0), 0);
-    sectionHeader('Income Sources');
-    data.income.forEach(r => kv(r.label, inr(r.amount) + '/mo'));
-    kv('Total Monthly Income', inr(totalIncome));
-    doc.moveDown(0.5);
-
-    const totalExpense = data.expenses.reduce((s, r) => s + Number(r.amount || 0), 0);
-    sectionHeader('Monthly Expenses');
-    data.expenses.forEach(r => kv(r.label, inr(r.amount) + '/mo'));
-    kv('Total Monthly Expenses', inr(totalExpense));
-    kv('Net Monthly Surplus', inr(totalIncome - totalExpense));
-    doc.moveDown(0.5);
-
-    if (data.liabilities.length) {
-      sectionHeader('Liabilities');
-      data.liabilities.forEach(r => kv(r.label, `EMI ${inr(r.emi)}/mo | Outstanding: ${inr(r.outstanding_amount)}`));
-      doc.moveDown(0.5);
-    }
-
-    if (data.investments.length) {
-      sectionHeader('Existing Investments & Assets');
-      data.investments.forEach(r => kv(r.label, inr(r.current_value)));
-      doc.moveDown(0.5);
-    }
-
-    if (data.insurance.length) {
-      sectionHeader('Insurance Policies');
-      data.insurance.forEach(r => kv(r.provider || r.policy_type, `Cover: ${inr(r.cover_amount)} | Premium: ${inr(r.premium)}/yr`));
-      doc.moveDown(0.5);
-    }
-
-    if (calcResult) {
-      sectionHeader(`Calculator: ${calculator_type?.toUpperCase()}`);
-      doc.fontSize(10).font('Helvetica-Bold').fillColor('#333').text('Summary:');
-      doc.moveDown(0.2);
-      Object.entries(calcResult.summary).forEach(([k, v]) => kv(k.replace(/_/g, ' '), inr(v)));
-      if (calcResult.yearly_table?.length) {
-        doc.moveDown(0.5);
-        doc.fontSize(10).font('Helvetica-Bold').fillColor('#333').text('Year-wise Projection (first 10 years):');
-        doc.moveDown(0.3);
-        calcResult.yearly_table.slice(0, 10).forEach(row => {
-          const headers = Object.keys(row);
-          doc.fontSize(9).font('Helvetica').fillColor('#333')
-            .text(headers.map(h => h === 'year' ? `Yr ${row[h]}` : inr(row[h])).join('   '));
-          doc.moveDown(0.15);
-        });
+    function drawPageHeader() {
+      // White background strip
+      doc.rect(0, 0, PAGE_W, 64).fill('#f8fafc');
+      // Left: logo
+      try {
+        doc.image(LOGO_PATH, MARGIN, 8, { height: 48, fit: [160, 48] });
+      } catch (_) {
+        doc.fillColor(BLUE).fontSize(14).font('Helvetica-Bold').text('Radds Capital', MARGIN, 18);
       }
+      // Right: tagline + date
+      doc.fillColor(GREY).fontSize(8).font('Helvetica')
+        .text('AMFI-Registered Mutual Fund Distributor', 0, 18, { align: 'right', width: PAGE_W - MARGIN })
+        .text(`Report date: ${new Date().toLocaleDateString('en-IN')}`, 0, 30, { align: 'right', width: PAGE_W - MARGIN });
+      // Bottom border
+      doc.moveTo(MARGIN, 64).lineTo(PAGE_W - MARGIN, 64).strokeColor('#C8DCF5').lineWidth(1).stroke();
+      doc.y = 74;
     }
 
-    // ── Disclaimer ────────────────────────────────────────────────
-    doc.moveDown(1);
-    doc.moveTo(50, doc.y).lineTo(545, doc.y).strokeColor('#eee').stroke();
-    doc.moveDown(0.5);
-    doc.fontSize(8).font('Helvetica').fillColor('#999').text(DISCLAIMER, 50, doc.y, { width: 495 });
+    function pageTitle(title, subtitle) {
+      doc.fillColor(BLUE).fontSize(16).font('Helvetica-Bold').text(title, MARGIN, doc.y);
+      if (subtitle) {
+        doc.fillColor(GREY).fontSize(9).font('Helvetica').text(subtitle).moveDown(0.3);
+      }
+      doc.fillColor(BLUE)
+        .moveTo(MARGIN, doc.y).lineTo(PAGE_W - MARGIN, doc.y)
+        .lineWidth(2).stroke();
+      doc.moveDown(0.6);
+    }
 
+    function sectionLabel(title) {
+      const y = doc.y + 4;
+      doc.rect(MARGIN, y, CONTENT_W, 18).fill(LIGHT_BG);
+      doc.fillColor(BLUE).fontSize(9).font('Helvetica-Bold')
+        .text(title.toUpperCase(), MARGIN + 6, y + 4);
+      doc.y = y + 22;
+    }
+
+    function row(label, value, opts = {}) {
+      const y = doc.y;
+      if (opts.shade) doc.rect(MARGIN, y, CONTENT_W, 15).fill('#f4f8fc');
+      doc.fillColor(opts.labelColor || '#333').fontSize(9)
+        .font(opts.bold ? 'Helvetica-Bold' : 'Helvetica')
+        .text(label, MARGIN + 4, y + 2, { width: CONTENT_W * 0.65, lineBreak: false });
+      doc.fillColor(opts.valueColor || (opts.bold ? '#0D1B2E' : '#444'))
+        .fontSize(9).font(opts.bold ? 'Helvetica-Bold' : 'Helvetica')
+        .text(String(value ?? '—'), MARGIN + 4, y + 2,
+          { width: CONTENT_W - 8, align: 'right', lineBreak: false });
+      doc.y = y + 17;
+    }
+
+    function divider() {
+      doc.moveTo(MARGIN, doc.y).lineTo(PAGE_W - MARGIN, doc.y)
+        .strokeColor('#E2EBF5').lineWidth(0.5).stroke();
+      doc.y += 4;
+    }
+
+    function disclaimer() {
+      // Push to near bottom
+      const disclaimerY = PAGE_H - 70;
+      if (doc.y < disclaimerY) doc.y = disclaimerY;
+      doc.moveTo(MARGIN, doc.y).lineTo(PAGE_W - MARGIN, doc.y)
+        .strokeColor('#E2EBF5').lineWidth(0.5).stroke();
+      doc.y += 4;
+      doc.fillColor('#aaa').fontSize(7).font('Helvetica')
+        .text(DISCLAIMER, MARGIN, doc.y, { width: CONTENT_W, align: 'left' });
+    }
+
+    function needsPageBreak(height = 40) {
+      return doc.y + height > PAGE_H - 90;
+    }
+
+    // ── Computed values ─────────────────────────────────────────────────
+    const getExp = (key) => Number(data.expenses.find(e => e.key === key)?.amount || 0);
+    const totalIncome   = data.income.reduce((s, r) => s + Number(r.amount || 0), 0);
+    const totalExpenses = data.expenses.reduce((s, r) => s + Number(r.amount || 0), 0);
+    const balance       = totalIncome - totalExpenses;
+
+    const financialAssets = (data.investments || []).filter(i => !i.asset_class || i.asset_class === 'financial');
+    const physicalAssets  = (data.investments || []).filter(i => i.asset_class === 'physical');
+    const totalFinancial  = financialAssets.reduce((s, i) => s + Number(i.current_value || 0), 0);
+    const totalPhysical   = physicalAssets.reduce((s, i)  => s + Number(i.current_value || 0), 0);
+    const totalLiab       = data.liabilities.reduce((s, l) => s + Number(l.outstanding_amount || 0), 0);
+    const netWorth        = totalFinancial + totalPhysical - totalLiab;
+
+    const sipAmt     = Number(p.sip_amount || 0);
+    const sipRate    = Number(p.sip_growth_rate || 0.12);
+    const oneTime    = Number(p.one_time_invest || 0);
+    const swpWithd   = Number(p.swp_withdrawal || 0);
+    const swpCorpus  = Number(p.swp_corpus || 0);
+    const swpRate    = Number(p.swp_growth_rate || 0.12);
+
+    const hlAmt    = Number(p.home_loan_amount || 0);
+    const hlEmi    = Number(p.home_loan_emi || 0);
+    const hlTenure = Number(p.home_loan_tenure || 20);
+    const hlRate   = Number(p.home_loan_rate || 0.071);
+    const hlTotalPaid     = hlEmi * hlTenure * 12;
+    const hlTotalInterest = Math.max(0, hlTotalPaid - hlAmt);
+
+    // Same formula as XLSX — annual compounding, beginning of period
+    const hlAnnualFactor = ((Math.pow(1.12, hlTenure) - 1) / 0.12) * 1.12;
+    const hlSipMonthly   = hlTotalInterest > 0 ? Math.ceil(hlTotalInterest / hlAnnualFactor / 12) : 0;
+    const hlAnnualSip    = hlSipMonthly * 12;
+
+    const termPrem   = Number(p.term_insurance_premium || 0);
+    const termSip    = Number(p.term_insurance_sip || 0);
+    const termTenure = Number(p.term_insurance_tenure || 12);
+    const termRate   = Number(p.term_growth_rate || 0.12);
+
+    const riskLabel = { conservative: 'Conservative', moderate: 'Moderate', aggressive: 'Aggressive' };
+
+    // ══════════════════════════════════════════════════════════
+    // PAGE 1 — Financial Profile Summary
+    // ══════════════════════════════════════════════════════════
+    addPage();
+    pageTitle('Financial Profile Summary', `${userName}  •  ${userEmail}${userPhone ? '  •  ' + userPhone : ''}  •  Plan Date: ${planDate}`);
+
+    // Summary banner
+    const bannerY = doc.y;
+    doc.rect(MARGIN, bannerY, CONTENT_W, 44).fill(BLUE);
+    const bannerItems = [
+      { label: 'Monthly Income',      value: inrPdf(totalIncome),   x: MARGIN + 10 },
+      { label: 'Monthly Expenses',    value: inrPdf(totalExpenses), x: MARGIN + 130 },
+      { label: 'Investment Capacity', value: inrPdf(Math.max(0, balance)), x: MARGIN + 260 },
+      { label: 'Net Worth',           value: inrPdf(netWorth),      x: MARGIN + 390 },
+    ];
+    bannerItems.forEach(({ label, value, x }) => {
+      doc.fillColor('rgba(255,255,255,0.65)').fontSize(7).font('Helvetica').text(label, x, bannerY + 6, { lineBreak: false });
+      doc.fillColor('white').fontSize(11).font('Helvetica-Bold').text(value, x, bannerY + 18, { lineBreak: false });
+    });
+    doc.y = bannerY + 54;
+
+    // Personal details
+    sectionLabel('Personal Details');
+    const personal = [
+      ['Name',             data.user?.display_name || '—'],
+      ['Email',            userEmail || '—'],
+      ['Phone',            userPhone || '—'],
+      ['Age',              p.age ? `${p.age} years` : '—'],
+      ['Risk Preference',  riskLabel[p.risk_preference] || '—'],
+      ['Date of Plan',     planDate],
+    ];
+    personal.forEach(([l, v], i) => row(l, v, { shade: i % 2 === 0 }));
+    doc.moveDown(0.5);
+
+    // Income
+    sectionLabel('Monthly Income');
+    data.income.forEach((r, i) => row(r.label, inrPdf(r.amount) + '/mo', { shade: i % 2 === 0 }));
+    row('Total Monthly Income', inrPdf(totalIncome) + '/mo', { bold: true, valueColor: BLUE });
+    doc.moveDown(0.5);
+
+    // Expenses
+    if (needsPageBreak(60)) { addPage(); }
+    sectionLabel('Monthly Expenses');
+    const expLabels = {
+      householdExp: 'House Hold Expenses', rent: 'Rent', emi: 'EMI',
+      healthInsurance: 'Health Insurance', insurance: 'Insurance', bills: 'Bills',
+      schoolFees: 'School Fees', fuel: 'Fuel', personal: 'Personal',
+      existingSip: 'Existing SIP', addExpenses: 'Additional Expenses',
+    };
+    data.expenses.forEach((r, i) =>
+      row(expLabels[r.key] || r.label, inrPdf(r.amount) + '/mo', { shade: i % 2 === 0 })
+    );
+    row('Total Monthly Expenses', inrPdf(totalExpenses) + '/mo', { bold: true, valueColor: RED });
+    row('Net Monthly Balance', inrPdf(balance) + '/mo', {
+      bold: true, valueColor: balance >= 0 ? GREEN : RED,
+    });
+    doc.moveDown(0.5);
+
+    // Children
+    if (data.children.length > 0) {
+      if (needsPageBreak(50)) { addPage(); }
+      sectionLabel('Children Expenses');
+      data.children.forEach((child, i) => {
+        const exp = (data.child_expenses || []).find(e => e.child_id === child.id) || {};
+        const childTotal = Number(exp.education||0) + Number(exp.allowance||0) + Number(exp.holiday||0) + Number(exp.medical||0);
+        row(`${child.name} (Age ${child.age})`, '', { bold: true });
+        row('  Education',  inrPdf(exp.education || 0), { shade: true });
+        row('  Allowance',  inrPdf(exp.allowance || 0));
+        row('  Holiday',    inrPdf(exp.holiday || 0), { shade: true });
+        row('  Medical',    inrPdf(exp.medical || 0));
+        row('  Child Total/mo', inrPdf(childTotal), { bold: true });
+        if (i < data.children.length - 1) divider();
+      });
+    }
+
+    disclaimer();
+
+    // ══════════════════════════════════════════════════════════
+    // PAGE 2 — Net Worth
+    // ══════════════════════════════════════════════════════════
+    addPage();
+    pageTitle('Net Worth Statement', `As on ${planDate}`);
+
+    sectionLabel('Financial Assets');
+    if (financialAssets.length === 0) {
+      doc.fillColor(GREY).fontSize(9).font('Helvetica').text('No financial assets recorded.', MARGIN + 4, doc.y).moveDown(0.5);
+    } else {
+      financialAssets.forEach((a, i) =>
+        row(a.label || a.investment_type, inrPdf(a.current_value), { shade: i % 2 === 0 })
+      );
+      row('Total Financial Assets', inrPdf(totalFinancial), { bold: true, valueColor: BLUE });
+    }
+    doc.moveDown(0.5);
+
+    sectionLabel('Physical Assets');
+    if (physicalAssets.length === 0) {
+      doc.fillColor(GREY).fontSize(9).font('Helvetica').text('No physical assets recorded.', MARGIN + 4, doc.y).moveDown(0.5);
+    } else {
+      physicalAssets.forEach((a, i) =>
+        row(a.label || a.investment_type, inrPdf(a.current_value), { shade: i % 2 === 0 })
+      );
+      row('Total Physical Assets', inrPdf(totalPhysical), { bold: true, valueColor: BLUE });
+    }
+    doc.moveDown(0.5);
+
+    sectionLabel('Liabilities');
+    if (data.liabilities.length === 0) {
+      doc.fillColor(GREY).fontSize(9).font('Helvetica').text('No liabilities recorded.', MARGIN + 4, doc.y).moveDown(0.5);
+    } else {
+      data.liabilities.forEach((l, i) => {
+        row(l.label, `EMI ${inrPdf(l.emi)}/mo | Outstanding: ${inrPdf(l.outstanding_amount)}`, { shade: i % 2 === 0 });
+      });
+      row('Total Liabilities', inrPdf(totalLiab), { bold: true, valueColor: RED });
+    }
+    doc.moveDown(0.5);
+
+    // Net worth total box
+    const nwY = doc.y + 4;
+    doc.rect(MARGIN, nwY, CONTENT_W, 32).fill(netWorth >= 0 ? '#e6f4ea' : '#fdecea');
+    doc.fillColor(netWorth >= 0 ? GREEN : RED).fontSize(11).font('Helvetica-Bold')
+      .text('Net Worth (Assets − Liabilities)', MARGIN + 8, nwY + 9, { width: CONTENT_W * 0.6, lineBreak: false });
+    doc.fontSize(13).text(inrPdf(netWorth), MARGIN + 8, nwY + 8,
+      { width: CONTENT_W - 16, align: 'right', lineBreak: false });
+    doc.y = nwY + 42;
+
+    // Insurance
+    if (data.insurance.length > 0) {
+      doc.moveDown(0.5);
+      sectionLabel('Insurance Policies');
+      data.insurance.forEach((ins, i) => {
+        row(
+          `${ins.policy_type.charAt(0).toUpperCase() + ins.policy_type.slice(1)} — ${ins.provider || 'N/A'}`,
+          `Cover: ${inrPdf(ins.cover_amount)} | Premium: ${inrPdf(ins.premium)}/yr`,
+          { shade: i % 2 === 0 }
+        );
+      });
+    }
+
+    disclaimer();
+
+    // ══════════════════════════════════════════════════════════
+    // PAGE 3 — Investment Planning
+    // ══════════════════════════════════════════════════════════
+    addPage();
+    pageTitle('Investment Planning', 'SIP, One-Time & SWP — 20-year projection at 12% p.a.');
+
+    // Params
+    sectionLabel('Parameters');
+    row('Monthly SIP Amount',     inrPdf(sipAmt),          { shade: true });
+    row('SIP Growth Rate',        `${(sipRate * 100).toFixed(1)}% p.a.`);
+    row('One-Time Investment',    inrPdf(oneTime),          { shade: true });
+    row('SWP Monthly Withdrawal', inrPdf(swpWithd));
+    row('SWP Corpus',             inrPdf(swpCorpus),        { shade: true });
+    doc.moveDown(0.6);
+
+    // 20-yr table
+    sectionLabel('20-Year Projection');
+
+    // Table header
+    const thY = doc.y;
+    const colX = [MARGIN, MARGIN+22, MARGIN+72, MARGIN+122, MARGIN+172, MARGIN+228,
+                  MARGIN+242, MARGIN+292, MARGIN+342, MARGIN+392, MARGIN+444];
+    doc.rect(MARGIN, thY, CONTENT_W, 14).fill(BLUE);
+    const hdrs = ['Yr','SIP Open','SIP Add','SIP Grow','SIP Close','|','1T Open','1T Grow','1T Close','|','SWP Close'];
+    hdrs.forEach((h, i) => {
+      doc.fillColor('white').fontSize(6.5).font('Helvetica-Bold')
+        .text(h, colX[i], thY + 3, { width: 48, lineBreak: false });
+    });
+    doc.y = thY + 16;
+
+    let sipOpen = 0, otOpen = oneTime, swpOpen = swpCorpus;
+    for (let yr = 1; yr <= 20; yr++) {
+      const sipAdd    = sipAmt * 12;
+      const sipGrowth = (sipOpen + sipAdd) * sipRate;
+      const sipClose  = sipOpen + sipAdd + sipGrowth;
+      const otGrowth  = otOpen * 0.12;
+      const otClose   = otOpen + otGrowth;
+      const swpWithdAnn = swpWithd * 12;
+      const swpRemaining = swpOpen - swpWithdAnn;
+      const swpGrowth   = swpRemaining > 0 ? swpRemaining * swpRate : 0;
+      const swpClose    = Math.max(0, swpRemaining + swpGrowth);
+
+      const rowY = doc.y;
+      if (needsPageBreak(12)) { addPage(); doc.y = 80; }
+      if (yr % 2 === 0) doc.rect(MARGIN, rowY, CONTENT_W, 12).fill('#f4f8fc');
+
+      const vals = [yr, sipOpen, sipAdd, sipGrowth, sipClose, '', otOpen, otGrowth, otClose, '', swpClose];
+      vals.forEach((v, i) => {
+        const txt = typeof v === 'number' && i !== 0 ? (v/100000).toFixed(1)+'L' : String(v);
+        doc.fillColor(i === 5 || i === 9 ? GREY : '#333')
+          .fontSize(6.5).font('Helvetica')
+          .text(txt, colX[i], rowY + 2, { width: 48, lineBreak: false });
+      });
+      doc.y = rowY + 13;
+
+      sipOpen = sipClose; otOpen = otClose; swpOpen = swpClose;
+    }
+
+    doc.moveDown(0.4);
+    row('Final SIP Corpus (20 yr)',    inrPdf(Math.round(sipOpen)),  { bold: true, valueColor: BLUE });
+    if (oneTime > 0) row('Final One-Time Corpus (20 yr)', inrPdf(Math.round(otOpen)), { bold: true, valueColor: BLUE });
+
+    // Taxation note
+    doc.moveDown(0.5);
+    sectionLabel('Taxation Reference (Equity MF)');
+    row('LTCG (held > 365 days)',  '₹1.25 lakh exempt; above that: 12.5%', { shade: true });
+    row('STCG (held ≤ 365 days)',  '20%');
+
+    doc.moveDown(0.3);
+    doc.fillColor(BLUE).fontSize(8).font('Helvetica-Bold')
+      .text('Radds Approach: Income − Investment = Lifestyle Expenses', MARGIN, doc.y, { width: CONTENT_W });
+
+    disclaimer();
+
+    // ══════════════════════════════════════════════════════════
+    // PAGE 4 — Home Loan Interest Free Plan
+    // ══════════════════════════════════════════════════════════
+    addPage();
+    pageTitle('Home Loan — Interest Free Plan',
+      'Parallel SIP strategy to offset total interest paid on your home loan');
+
+    sectionLabel('Loan Parameters');
+    row('Loan Amount',            inrPdf(hlAmt),                            { shade: true });
+    row('Monthly EMI',            inrPdf(hlEmi));
+    row('Tenure',                 `${hlTenure} years`,                   { shade: true });
+    row('Interest Rate',          `${(hlRate * 100).toFixed(2)}% p.a.`);
+    row('Total Amount Paid',      inrPdf(hlTotalPaid),                      { shade: true });
+    row('Total Interest Payable', inrPdf(hlTotalInterest), { bold: true, valueColor: RED });
+    doc.moveDown(0.5);
+
+    // Monthly SIP needed to offset interest
+    const sipNeeded    = hlSipMonthly;
+    const sipNeededAnn = hlAnnualSip;
+
+    const sipBoxY = doc.y + 4;
+    doc.rect(MARGIN, sipBoxY, CONTENT_W, 32).fill(LIGHT_BG);
+    doc.fillColor(BLUE).fontSize(9).font('Helvetica-Bold')
+      .text('Monthly SIP needed to cover total interest:', MARGIN + 8, sipBoxY + 6, { lineBreak: false });
+    doc.fillColor(GREEN).fontSize(13).font('Helvetica-Bold')
+      .text(inrPdf(sipNeeded) + '/mo', MARGIN + 8, sipBoxY + 5,
+        { width: CONTENT_W - 16, align: 'right', lineBreak: false });
+    doc.y = sipBoxY + 42;
+
+    // Projection table
+    sectionLabel(`SIP Growth vs Loan Tenure (${hlTenure} years @ 12% p.a.)`);
+    const hlThY = doc.y;
+    doc.rect(MARGIN, hlThY, CONTENT_W, 14).fill(BLUE);
+    ['Yr', 'SIP Open', 'Annual Add', 'Growth', 'Closing Corpus'].forEach((h, i) => {
+      doc.fillColor('white').fontSize(7.5).font('Helvetica-Bold')
+        .text(h, MARGIN + i * 97, hlThY + 3, { width: 95, lineBreak: false });
+    });
+    doc.y = hlThY + 16;
+
+    let hlSipOpen = 0;
+    for (let yr = 1; yr <= hlTenure; yr++) {
+      const add    = sipNeededAnn;
+      const growth = (hlSipOpen + add) * 0.12;
+      const close  = hlSipOpen + add + growth;
+      const rY = doc.y;
+      if (needsPageBreak(12)) { addPage(); doc.y = 80; }
+      if (yr % 2 === 0) doc.rect(MARGIN, rY, CONTENT_W, 12).fill('#f4f8fc');
+      [yr, inrPdf(Math.round(hlSipOpen)), inrPdf(add), inrPdf(Math.round(growth)), inrPdf(Math.round(close))].forEach((v, i) => {
+        doc.fillColor('#333').fontSize(7.5).font('Helvetica')
+          .text(String(v), MARGIN + i * 97, rY + 2, { width: 95, lineBreak: false });
+      });
+      doc.y = rY + 13;
+      hlSipOpen = close;
+    }
+
+    doc.moveDown(0.5);
+    row('Final SIP Corpus',                inrPdf(Math.round(hlSipOpen)), { bold: true, valueColor: BLUE });
+    row('Total Interest Payable',          inrPdf(hlTotalInterest),       { bold: true, valueColor: RED });
+    const net = hlSipOpen - hlTotalInterest;
+    row('Net Benefit (Corpus − Interest)', inrPdf(Math.round(net)),
+      { bold: true, valueColor: net >= 0 ? GREEN : RED });
+
+    disclaimer();
+
+    // ══════════════════════════════════════════════════════════
+    // PAGE 5 — Term Insurance Planning
+    // ══════════════════════════════════════════════════════════
+    addPage();
+    pageTitle('Term Insurance Planning',
+      'SIP strategy to offset term insurance premiums over policy tenure');
+
+    sectionLabel('Policy Parameters');
+    row('Annual Premium',        inrPdf(termPrem),                      { shade: true });
+    row('Monthly SIP to Offset', inrPdf(termSip));
+    row('Policy Tenure',         `${termTenure} years`,              { shade: true });
+    row('SIP Growth Rate',       `${(termRate * 100).toFixed(0)}% p.a.`);
+    doc.moveDown(0.5);
+
+    sectionLabel(`Year-wise Premium vs SIP Corpus (${termTenure} years)`);
+    const tiThY = doc.y;
+    doc.rect(MARGIN, tiThY, CONTENT_W, 14).fill(BLUE);
+    ['Yr', 'Premium Paid', 'SIP Open', 'Annual SIP', 'Growth', 'SIP Close'].forEach((h, i) => {
+      doc.fillColor('white').fontSize(7.5).font('Helvetica-Bold')
+        .text(h, MARGIN + i * 82, tiThY + 3, { width: 80, lineBreak: false });
+    });
+    doc.y = tiThY + 16;
+
+    let tiCorpus = 0;
+    for (let yr = 1; yr <= termTenure; yr++) {
+      const annSip = termSip * 12;
+      const growth = (tiCorpus + annSip) * termRate;
+      const open   = tiCorpus;
+      tiCorpus     = tiCorpus + annSip + growth;
+      const rY = doc.y;
+      if (needsPageBreak(12)) { addPage(); doc.y = 80; }
+      if (yr % 2 === 0) doc.rect(MARGIN, rY, CONTENT_W, 12).fill('#f4f8fc');
+      [yr, inrPdf(termPrem), inrPdf(Math.round(open)), inrPdf(annSip), inrPdf(Math.round(growth)), inrPdf(Math.round(tiCorpus))].forEach((v, i) => {
+        doc.fillColor('#333').fontSize(7.5).font('Helvetica')
+          .text(String(v), MARGIN + i * 82, rY + 2, { width: 80, lineBreak: false });
+      });
+      doc.y = rY + 13;
+    }
+
+    doc.moveDown(0.5);
+    row('Total Premiums Paid',              inrPdf(termPrem * termTenure),       { bold: true });
+    row('Total SIP Invested',               inrPdf(termSip * 12 * termTenure),   { bold: true });
+    row('Final SIP Corpus',                 inrPdf(Math.round(tiCorpus)),        { bold: true, valueColor: BLUE });
+    const tiNet = tiCorpus - termPrem * termTenure;
+    row('Net Benefit (Corpus − Premiums)',  inrPdf(Math.round(tiNet)),
+      { bold: true, valueColor: tiNet >= 0 ? GREEN : RED });
+
+    disclaimer();
+
+    // ── Finalise ──────────────────────────────────────────────────────
     doc.end();
 
-    await supabaseAdmin.from('export_reports').insert({
-      user_id: req.userId, export_type: 'pdf', calculator_type: calculator_type || null,
-    }).then(() => {}).catch?.(() => {}) || Promise.resolve();
+    // Supabase v2 returns PromiseLike — wrap in Promise.resolve() so .catch() works
+    await Promise.resolve(
+      supabaseAdmin.from('export_reports').insert({
+        user_id: req.userId, export_type: 'pdf', calculator_type: calculator_type || null,
+      })
+    ).catch(() => {}); // non-fatal — don't block response
+
   } catch (err) {
     console.error('PDF export error:', err);
-    if (!res.headersSent) res.status(500).json({ error: 'Export failed' });
+    // doc.pipe(res) may already have started — never write JSON after that
+    // The frontend handleExport will catch the non-200 and show the error page
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Export failed', code: 'PDF_ERROR' });
+    } else {
+      res.destroy(); // abort the stream cleanly so browser sees a network error
+    }
   }
 });
 

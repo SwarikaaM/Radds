@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useProfile } from '../context/useProfile';
-import { calculateTotals } from '../utils/financialProfile';
+import { calculateTotals, createEmptyProfile } from '../utils/financialProfile';
 import Button from '../components/ui/Button';
 import { ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react';
+import ErrorPage from './ErrorPage';
 
 // ── Numeric input that lets you clear the field ───────────────────────
 function NumInput({ value, onChange, placeholder = '0', prefix = '₹', suffix = '' }) {
@@ -214,26 +215,17 @@ export default function FinancialProfile() {
   const { user, apiFetch } = useAuth();
   const { profile: savedProfile, saveProfile, loading: profileLoading } = useProfile();
   const navigate = useNavigate();
-  const [profile, setProfile] = useState(null);
+  const [profile, setProfile] = useState(() => createEmptyProfile());
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [errors, setErrors] = useState({});
+  const [exportError, setExportError] = useState(null); // { type, code }
 
   useEffect(() => { if (!user) navigate('/login'); }, [user, navigate]);
-  useEffect(() => { if (savedProfile && !profile) setProfile(savedProfile); }, [savedProfile]);
+  useEffect(() => { if (savedProfile) setProfile(savedProfile); }, [savedProfile]);
 
   if (!user) return null;
-  if (profileLoading || !profile) {
-    return (
-      <main className="py-20 pt-24 bg-[#F4F8FC] min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#22568F] mx-auto mb-4" />
-          <p className="text-[#6B7E99]">Loading your financial profile...</p>
-        </div>
-      </main>
-    );
-  }
 
   const totals = calculateTotals(profile);
 
@@ -277,18 +269,27 @@ export default function FinancialProfile() {
   }
 
   async function handleExport(type) {
-    const res = await apiFetch(`/api/exports/${type}`, {
-      method: 'POST',
-      body: JSON.stringify({}),
-    });
-    if (!res.ok) { alert('Export failed. Please try again.'); return; }
-    const blob = await res.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `radds_financial_profile_${Date.now()}.${type === 'pdf' ? 'pdf' : 'xlsx'}`;
-    document.body.appendChild(a); a.click(); a.remove();
-    window.URL.revokeObjectURL(url);
+    setExportError(null);
+    try {
+      const res = await apiFetch(`/api/exports/${type}`, {
+        method: 'POST',
+        body: JSON.stringify({}),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setExportError({ type, code: body.code || (type === 'pdf' ? 'PDF_ERROR' : 'XLSX_ERROR') });
+        return;
+      }
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `radds_financial_profile_${Date.now()}.${type === 'pdf' ? 'pdf' : 'xlsx'}`;
+      document.body.appendChild(a); a.click(); a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setExportError({ type, code: 'NETWORK' });
+    }
   }
 
   // Financial asset type options
@@ -321,6 +322,14 @@ export default function FinancialProfile() {
 
         <h1 className="font-playfair text-4xl font-bold mb-2 text-[#0D1B2E]">Financial Profile</h1>
         <p className="text-[#6B7E99] mb-2">Your data is used to generate personalised financial reports and calculator defaults.</p>
+
+        {/* Fetching banner — shown only while data is loading from server */}
+        {profileLoading && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-sm text-blue-800 flex items-center gap-3 mb-4">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 flex-shrink-0" />
+            <span>Fetching your saved data…</span>
+          </div>
+        )}
 
         {/* Save note */}
         <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-800 flex items-start gap-2 mb-6">
@@ -563,6 +572,14 @@ export default function FinancialProfile() {
 
         {/* Action buttons */}
         <div className="mt-6 space-y-4">
+          {/* Export error — shown inline, dismissable, with retry */}
+          {exportError && (
+            <ErrorPage
+              code={exportError.code}
+              inline
+              onRetry={() => handleExport(exportError.type)}
+            />
+          )}
           <div className="flex flex-wrap gap-3 items-center">
             <Button onClick={handleSave} disabled={saving}>
               {saving ? 'Saving...' : saved ? 'Saved ✓' : 'Save Profile'}

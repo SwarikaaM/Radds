@@ -105,12 +105,12 @@ export default function Navbar() {
           {/* Logo */}
           <Link
             to="/"
-            className="flex items-center group"
+            className="flex items-center group flex-shrink-0"
           >
             <img
               src={logoPNG}
               alt="Radds Capital"
-              className="h-[52px] md:h-[56px]  w-auto object-contain transition-transform duration-200 group-hover:scale-[1.02]"
+              className="h-[52px] md:h-[56px] w-auto min-w-[120px] object-contain transition-transform duration-200 group-hover:scale-[1.02]"
             />
           </Link>
 
@@ -200,11 +200,7 @@ export default function Navbar() {
               </Link>
             )}
 
-            <StoreBadge store="android" initial={0.25} />
-            <StoreBadge store="ios" initial={0.32} />
           </div>
-
-          {/* Mobile hamburger */}
           <motion.button
             className="lg:hidden p-2 text-white/80 hover:text-white transition-colors rounded"
             onClick={() => setMobileOpen(!mobileOpen)}

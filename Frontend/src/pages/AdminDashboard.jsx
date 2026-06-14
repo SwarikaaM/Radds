@@ -55,10 +55,18 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-[#22568f] text-white px-6 py-4 flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold">Radds Capital — Admin</h1>
-          <p className="text-xs opacity-70">Internal dashboard</p>
+      <div className="bg-[#22568f] text-white mt-16 px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => navigate(-1)}
+            className="text-white/60 hover:text-white text-sm transition-colors"
+          >
+            ← Back
+          </button>
+          <div>
+            <h1 className="text-xl font-bold">Radds Capital — Admin</h1>
+            <p className="text-xs opacity-70">Internal dashboard</p>
+          </div>
         </div>
         <span className="text-sm opacity-70">{user?.email}</span>
       </div>

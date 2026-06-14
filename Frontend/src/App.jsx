@@ -22,6 +22,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import RequireAuth from './components/ui/RequireAuth';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import ErrorPage from './pages/ErrorPage';
 
 const Placeholder = ({ title }) => (
   <div className="min-h-screen bg-lightbg flex items-center justify-center pt-16">
@@ -64,6 +65,7 @@ export default function App() {
             <AdminDashboard />
           </RequireAuth>
         } />
+        <Route path="*" element={<ErrorPage code={404} />} />
       </Routes>
       <Footer />
       <SessionExpiredModal />

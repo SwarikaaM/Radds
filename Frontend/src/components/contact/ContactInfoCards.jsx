@@ -11,30 +11,30 @@ const cards = [
   {
     icon: MapPin,
     title: "Office Address",
-    value: "Mumbai, Maharashtra, India",
+    value: "Z-2101, Z wing, 2nd Floor, Akshar Business Park, Sector 25, Vashi, Navi Mumbai - 400705",
   },
   {
     icon: Phone,
     title: "Phone",
-    value: "+91 98765 43210",
-    href: "tel:+919876543210",
+    value: "+91 96641 50986",
+    href: "tel:+919664150986",
   },
   {
     icon: Mail,
     title: "Email",
-    value: "hello@raddscapital.com",
-    href: "mailto:hello@raddscapital.com",
+    value: "info@raddscapital.com",
+    href: "mailto:info@raddscapital.com",
   },
   {
     icon: MessageCircle,
     title: "WhatsApp",
     value: "Chat With Us",
-    href: "https://wa.me/919876543210",
+    href: "https://wa.me/919664150986",
   },
   {
     icon: Clock3,
     title: "Business Hours",
-    value: "Mon–Sat • 9:00 AM – 7:00 PM",
+    value: "Mon–Fri • 9:00 AM – 5:00 PM",
   },
   {
     icon: Globe,

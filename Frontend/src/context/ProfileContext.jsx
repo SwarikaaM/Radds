@@ -48,10 +48,14 @@ export function ProfileProvider({ children }) {
   useEffect(() => {
     setProfile(null);
     clearTimeout(sessionTimer.current);
-    if (user && token) loadProfile();
-    else { setProfile(null); clearTimeout(sessionTimer.current); }
-    return () => clearTimeout(sessionTimer.current);
-  }, [user, token]); // eslint-disable-line
+    if (user?.id && token) {
+      const t = setTimeout(() => loadProfile(), 50);
+      return () => { clearTimeout(t); clearTimeout(sessionTimer.current); };
+    } else {
+      setProfile(null);
+      clearTimeout(sessionTimer.current);
+    }
+  }, [user?.id, token]);  // eslint-disable-line
 
   async function saveProfile(updatedProfile) {
     if (!token) return;

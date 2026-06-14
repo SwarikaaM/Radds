@@ -1,4 +1,4 @@
-import { useParams, Navigate } from "react-router-dom";
+import { useParams, Navigate, useNavigate } from "react-router-dom";
 import { useState, useMemo, useEffect } from "react";
 
 import { calculatorRegistry, getDefaultValues } from "../data/calculatorRegistry";
@@ -18,6 +18,7 @@ import CalculatorExportBar from "../components/calculator-detail/CalculatorExpor
 
 export default function CalculatorDetail() {
   const { slug } = useParams();
+  const navigate = useNavigate();
   const config = calculatorRegistry[slug];
 
   // Inputs state — initialised from config defaults (must be before any conditional return)
@@ -44,6 +45,18 @@ export default function CalculatorDetail() {
 
   return (
     <>
+      {/* ── Back button ─────────────────────────────────────────────── */}
+      <div className="bg-lightbg pt-20 pb-0">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2 text-sm text-[#6B7E99] hover:text-[#22568F] transition-colors mb-2"
+          >
+            ← Back
+          </button>
+        </div>
+      </div>
+
       {/* ── 1. Hero ─────────────────────────────────────────────────── */}
       <CalculatorHero title={config.title} description={config.description} />
 

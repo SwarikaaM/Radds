@@ -21,21 +21,25 @@ router.get('/users', async (req, res) => {
 // GET /api/admin/users/:id — full profile of one user
 router.get('/users/:id', [param('id').isUUID()], async (req, res) => {
   const uid = req.params.id;
-  const [profile, income, expenses, children, liabilities, investments, insurance, goals] = await Promise.all([
+  const [userRes, profile, income, expenses, children, childExpenses, liabilities, investments, insurance, goals] = await Promise.all([
+    supabaseAdmin.from('user_profiles').select('display_name, email, phone').eq('id', uid).single(),
     supabaseAdmin.from('financial_profiles').select('*').eq('user_id', uid).single(),
     supabaseAdmin.from('income_sources').select('*').eq('user_id', uid),
     supabaseAdmin.from('expense_items').select('*').eq('user_id', uid),
     supabaseAdmin.from('children').select('*').eq('user_id', uid),
+    supabaseAdmin.from('child_expenses').select('*').eq('user_id', uid),
     supabaseAdmin.from('liabilities').select('*').eq('user_id', uid),
     supabaseAdmin.from('investments').select('*').eq('user_id', uid),
     supabaseAdmin.from('insurance_policies').select('*').eq('user_id', uid),
     supabaseAdmin.from('financial_goals').select('*').eq('user_id', uid),
   ]);
   res.json({
+    user: userRes.data,
     profile: profile.data,
     income: income.data || [],
     expenses: expenses.data || [],
     children: children.data || [],
+    child_expenses: childExpenses.data || [],
     liabilities: liabilities.data || [],
     investments: investments.data || [],
     insurance: insurance.data || [],
