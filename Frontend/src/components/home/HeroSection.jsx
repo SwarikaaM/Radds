@@ -886,7 +886,7 @@ function PhoneWithSatellites({ loopKey }) {
               <ShieldCheck size={16} className="text-primary" />
             </div>
             <div>
-              <p className="text-[11px] font-semibold text-slate-800">SEBI Registered</p>
+              <p className="text-[11px] font-semibold text-slate-800">AMFI-Registered Mutual Fund Distributor</p>
               <p className="text-[9px] text-slate-400 leading-tight">Certified & regulated</p>
             </div>
           </div>
@@ -931,7 +931,7 @@ function PhoneWithSatellites({ loopKey }) {
             </div>
             <span className="text-[10px] font-semibold text-slate-600">Families Guided</span>
           </div>
-          <p className="text-lg font-bold text-slate-900 font-mono-num">500+</p>
+          <p className="text-lg font-bold text-slate-900 font-mono-num">100+</p>
           <p className="text-[9px] text-slate-400 mt-0.5">SIP ₹15K · 15 yrs</p>
         </SatCard>
       </div>
@@ -1009,7 +1009,7 @@ export default function HeroSection() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.28, duration: 0.6 }}
             >
-              A ₹10,000/month SIP today becomes a crore tomorrow.
+              A ₹15,000/month SIP today becomes a crore tomorrow.
               See exactly what disciplined investing does to your future — no jargon, just numbers.
             </motion.p>
 

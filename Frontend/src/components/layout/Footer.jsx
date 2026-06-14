@@ -51,7 +51,7 @@ export default function Footer() {
               "Your Goals. Our Strategy. Your Growth."
             </p>
             <p className="text-white/40 text-xs leading-relaxed">
-              AMFI-Registered Mutual Fund Distributor | ARN-XXXXXX. Transparent, client-first MF distribution.
+              AMFI-Registered Mutual Fund Distributor | ARN-334716 | ARN-292158 | ARN- 124053. Transparent, client-first MF distribution.
             </p>
             <div className="flex items-center gap-3 pt-2">
               {[
@@ -120,18 +120,18 @@ export default function Footer() {
               <li className="flex items-start gap-3 text-white/50 text-sm">
                 <Mail size={15} className="mt-0.5 flex-shrink-0 text-accent" />
                 <a href="mailto:hello@raddscapital.com" className="hover:text-white transition-colors">
-                  hello@raddscapital.com
+                  info@raddscapital.com
                 </a>
               </li>
               <li className="flex items-start gap-3 text-white/50 text-sm">
                 <Phone size={15} className="mt-0.5 flex-shrink-0 text-accent" />
-                <a href="tel:+918000000000" className="hover:text-white transition-colors">
-                  +91 80000 00000
+                <a href="tel:+919664150986" className="hover:text-white transition-colors">
+                  +91 96641 50986
                 </a>
               </li>
               <li className="flex items-start gap-3 text-white/50 text-sm">
                 <MapPin size={15} className="mt-0.5 flex-shrink-0 text-accent" />
-                <span>Mumbai, Maharashtra, India</span>
+                <span>Z-2101, Z wing, 2nd Floor, Akshar Business Park, Sector 25, Vashi, Navi Mumbai - 400705</span>
               </li>
             </ul>
             <div className="mt-6 p-3 bg-white/5 border border-white/10 rounded-card">

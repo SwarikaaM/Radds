@@ -12,7 +12,7 @@ const path = require('path');
 const router = express.Router();
 router.use(requireAuth, exportLimiter);
 
-const DISCLAIMER = `Mutual Fund investments are subject to market risks. Read all scheme related documents carefully. Past performance is not indicative of future returns. This report is for planning purposes only and does not constitute investment advice. Radds Capital is an AMFI-Registered Mutual Fund Distributor (ARN-XXXXXX).`;
+const DISCLAIMER = `Mutual Fund investments are subject to market risks. Read all scheme related documents carefully. Past performance is not indicative of future returns. This report is for planning purposes only and does not constitute investment advice. Radds Capital is an AMFI-Registered Mutual Fund Distributor (ARN-334716 | ARN-292158 | ARN- 124053).`;
 
 // ── Fetch full profile from DB ─────────────────────────────────────────
 async function getFullProfile(userId) {

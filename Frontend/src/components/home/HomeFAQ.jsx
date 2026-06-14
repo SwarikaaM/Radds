@@ -8,7 +8,7 @@ const faqs = [
   {
     question: "Is Radds Capital SEBI registered?",
     answer:
-      "Radds Capital is registered with AMFI as a Mutual Fund Distributor (ARN-XXXXXX). We are not a SEBI Registered Investment Adviser (RIA). As an MFD, we help clients invest in mutual funds and provide incidental guidance on scheme selection based on your risk profile and goals.",
+      "Radds Capital is registered with AMFI as a Mutual Fund Distributor (ARN-334716 | ARN-292158 | ARN- 124053). We are not a SEBI Registered Investment Adviser (RIA). As an MFD, we help clients invest in mutual funds and provide incidental guidance on scheme selection based on your risk profile and goals.",
   },
   {
     question: "Do you charge commissions on the products you recommend?",
