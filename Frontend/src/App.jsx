@@ -23,6 +23,7 @@ import RequireAuth from './components/ui/RequireAuth';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import ErrorPage from './pages/ErrorPage';
+import RaddsChatbot from "./components/chatbot/RaddsChatbot";
 
 const Placeholder = ({ title }) => (
   <div className="min-h-screen bg-lightbg flex items-center justify-center pt-16">
@@ -67,6 +68,7 @@ export default function App() {
         } />
         <Route path="*" element={<ErrorPage code={404} />} />
       </Routes>
+      <RaddsChatbot /> 
       <Footer />
       <SessionExpiredModal />
       </AuthProvider>
